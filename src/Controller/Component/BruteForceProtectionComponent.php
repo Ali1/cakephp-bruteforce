@@ -1,0 +1,117 @@
+<?php
+namespace BruteForceProtection\Controller\Component;
+
+use Cake\Cache\Cache;
+use Cake\Controller\Component;
+use Cake\Log\Log;
+use Cake\Routing\Router;
+use Cake\Utility\Hash;
+
+/**
+ * @property \Cake\Controller\Component\FlashComponent $Flash
+ */
+class BruteForceProtectionComponent extends Component
+{
+    /**
+     * @var array
+     */
+    public $components = ['Flash'];
+
+    /**
+     * @var array
+     */
+    public $_defaultConfig = [ // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
+        //#(PSR-2 doesn't like underscores - this is inherited)
+        'name' => '',
+        'timeWindow' => 5 * 60, // 5 minutes
+        'totalAttemptsLimit' => 8,
+        'keyNames' => ['username', 'password'],
+        'firstKeyAttemptLimit' => false, // can be used for example when you want tighter limits on username
+        'security' => 'all', // which inputs should be encrypted in cache - none, firstKeyUnsecure (i.e. username), all
+        'flash' => true,
+        'redirectUrl' => ['action' => 'login'],
+    ];
+
+    /**
+     * @param array $config
+     *
+     * @return void
+     */
+    public function applyProtection(array $config)
+    {
+        $config = array_merge($this->getConfig(), $config);
+        if (is_string($config['keyNames'])) {
+            $config['keyNames'] = [$config['keyNames']];
+        }
+        $controller = $this->_registry->getController();
+
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $key = 'BruteForceData.' . $ip . '.' . md5(json_encode($config));
+        $ip_data = Cache::read($key);
+        Log::info(json_encode($ip_data));
+
+        // Check and record attempts input data against config
+        $challengeData = [];
+        foreach ($config['keyNames'] as $keyName) {
+            if (!$challengeData[$keyName] = $controller->request->getData($keyName)) {
+                return; // not being challenged
+            }
+        }
+
+        // prepare cache object for this IP address and this $config instance
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $key = 'BruteForceData.' . $ip . '.' . md5(json_encode($config));
+        $ip_data = Cache::read($key);
+
+        if (empty($ip_data)) {
+            // first login attempt - initialize data for cache
+            $ip_data = ['attempts' => []];
+        }
+
+        // this new attempt
+        $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
+        if ($config['security'] === 'none') {
+            $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
+            $newAttempt['challengeDataHash'] = json_encode($challengeData);
+        } elseif ($config['security'] === 'firstKeyUnsecure') {
+            $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
+            $newAttempt['challengeDataHash'] = password_hash(json_encode($challengeData), PASSWORD_DEFAULT);
+        } else {
+            $newAttempt['firstKey'] = password_hash($challengeData[$config['keyNames'][0]], PASSWORD_DEFAULT);
+            $newAttempt['challengeDataHash'] = password_hash(json_encode($challengeData), PASSWORD_DEFAULT);
+        }
+
+        // remove old attempts based on configured time window
+        $ip_data['attempts'] = array_filter($ip_data['attempts'], function ($attempt) use ($config) {
+            return ($attempt['time'] > (time() - $config['timeWindow']));
+        });
+
+        // analyse history of this user
+        $total_attempts = count($ip_data['attempts']);
+        $attemptedChallenges = Hash::extract($ip_data['attempts'], '{n}.challengeDataHash');
+        $first_key_attempts = 0;
+        foreach ($ip_data['attempts'] as $k => $attempt) {
+            if ($config['firstKeyAttemptLimit'] && $newAttempt['firstKey'] == $attempt['firstKey']) {
+                $first_key_attempts++;
+            }
+        }
+        // don't count this as a challenge if it's a repeat of a previous combination
+        foreach ($attemptedChallenges as $hash) {
+            if (hash_equals($hash, $newAttempt['challengeDataHash'])) {
+                return; // has been counted previously
+            }
+        }
+
+        if ($total_attempts > $config['totalAttemptsLimit'] || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])) {
+            Log::alert("Blocked login attempt\nIP: $ip\n\n", json_encode($ip_data));
+            if ($config['flash']) {
+                debug("Block");
+                $this->Flash->error('Login attempts have been blocked for a few minutes. Please try again later.');
+            }
+            header('Location: ' . Router::url($config['redirectUrl']));
+            die();
+        }
+          $ip_data['attempts'][] = $newAttempt;
+        Cache::write($key, $ip_data);
+    }
+}

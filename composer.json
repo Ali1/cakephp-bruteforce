@@ -14,7 +14,7 @@
         {
             "name": "Ali Bakir",
             "homepage": "https://github.com/ali1/"
-        },
+        }
     ],
     "require": {
         "php": ">=5.4.16",
