@@ -20,10 +20,9 @@ class BruteForceProtectionComponent extends Component
     /**
      * @var array
      */
-    public $_defaultConfig = [ // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
-        //#(PSR-2 doesn't like underscores - this is inherited)
+    public $_defaultConfig = [
         'name' => '',
-        'timeWindow' => 5 * 60, // 5 minutes
+        'timeWindow' => 300, // 5 minutes
         'totalAttemptsLimit' => 8,
         'keyNames' => ['username', 'password'],
         'firstKeyAttemptLimit' => false, // can be used for example when you want tighter limits on username
@@ -46,9 +45,9 @@ class BruteForceProtectionComponent extends Component
         $controller = $this->_registry->getController();
 
         $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . $ip . '.' . md5(json_encode($config));
+        $key = 'BruteForceData.' . $ip . '.' . md5(serialize($config));
         $ip_data = Cache::read($key);
-        Log::info(json_encode($ip_data));
+        Log::info(serialize($ip_data));
 
         // Check and record attempts input data against config
         $challengeData = [];
@@ -60,7 +59,7 @@ class BruteForceProtectionComponent extends Component
 
         // prepare cache object for this IP address and this $config instance
         $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . $ip . '.' . md5(json_encode($config));
+        $key = 'BruteForceData.' . $ip . '.' . md5(serialize($config));
         $ip_data = Cache::read($key);
 
         if (empty($ip_data)) {
@@ -72,13 +71,13 @@ class BruteForceProtectionComponent extends Component
         $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
         if ($config['security'] === 'none') {
             $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
-            $newAttempt['challengeDataHash'] = json_encode($challengeData);
+            $newAttempt['challengeDataHash'] = serialize($challengeData);
         } elseif ($config['security'] === 'firstKeyUnsecure') {
             $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
-            $newAttempt['challengeDataHash'] = password_hash(json_encode($challengeData), PASSWORD_DEFAULT);
+            $newAttempt['challengeDataHash'] = password_hash(serialize($challengeData), PASSWORD_DEFAULT);
         } else {
             $newAttempt['firstKey'] = password_hash($challengeData[$config['keyNames'][0]], PASSWORD_DEFAULT);
-            $newAttempt['challengeDataHash'] = password_hash(json_encode($challengeData), PASSWORD_DEFAULT);
+            $newAttempt['challengeDataHash'] = password_hash(serialize($challengeData), PASSWORD_DEFAULT);
         }
 
         // remove old attempts based on configured time window
@@ -103,9 +102,8 @@ class BruteForceProtectionComponent extends Component
         }
 
         if ($total_attempts > $config['totalAttemptsLimit'] || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])) {
-            Log::alert("Blocked login attempt\nIP: $ip\n\n", json_encode($ip_data));
+            Log::alert("Blocked login attempt\nIP: $ip\n\n", serialize($ip_data));
             if ($config['flash']) {
-                debug("Block");
                 $this->Flash->error('Login attempts have been blocked for a few minutes. Please try again later.');
             }
             header('Location: ' . Router::url($config['redirectUrl']));
