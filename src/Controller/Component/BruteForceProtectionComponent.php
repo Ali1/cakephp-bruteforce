@@ -69,6 +69,7 @@ class BruteForceProtectionComponent extends Component
 
         // this new attempt
         $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
+
         if ($config['security'] === 'none') {
             $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
             $newAttempt['challengeDataHash'] = serialize($challengeData);
@@ -95,9 +96,15 @@ class BruteForceProtectionComponent extends Component
             }
         }
         // don't count this as a challenge if it's a repeat of a previous combination
-        foreach ($attemptedChallenges as $hash) {
-            if (hash_equals($hash, $newAttempt['challengeDataHash'])) {
-                return; // has been counted previously
+        foreach ($attemptedChallenges as $existingChallengeDataHash) {
+            if ($config['security'] === 'none') {
+                if (serialize($challengeData) == $existingChallengeDataHash) {
+                    return;
+                }
+            } else {
+                if (password_verify(serialize($challengeData), $existingChallengeDataHash)) {
+                    return; // has been counted previously
+                }
             }
         }
 
@@ -109,7 +116,7 @@ class BruteForceProtectionComponent extends Component
             header('Location: ' . Router::url($config['redirectUrl']));
             die();
         }
-          $ip_data['attempts'][] = $newAttempt;
+        $ip_data['attempts'][] = $newAttempt;
         Cache::write($key, $ip_data);
     }
 }
