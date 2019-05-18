@@ -47,7 +47,6 @@ class BruteForceProtectionComponent extends Component
         $ip = $_SERVER['REMOTE_ADDR'];
         $key = 'BruteForceData.' . $ip . '.' . md5(serialize($config));
         $ip_data = Cache::read($key);
-        Log::info(serialize($ip_data));
 
         // Check and record attempts input data against config
         $challengeData = [];
