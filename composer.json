@@ -26,12 +26,12 @@
     },
     "autoload": {
         "psr-4": {
-            "CakeMonga\\": "src"
+            "BruteForceProtection\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "CakePush\\Test\\": "tests",
+            "BruteForceProtection\\Test\\": "tests",
             "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
         }
     }
