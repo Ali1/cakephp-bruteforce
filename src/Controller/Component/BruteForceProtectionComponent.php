@@ -21,14 +21,15 @@ class BruteForceProtectionComponent extends Component
      * @var array
      */
     public $_defaultConfig = [
-        'name' => '',
+        'name' => 'login', // important to set if application uses component in more than 1 process
         'timeWindow' => 300, // 5 minutes
         'totalAttemptsLimit' => 8,
         'keyNames' => ['username', 'password'],
         'firstKeyAttemptLimit' => false, // can be used for example when you want tighter limits on username
         'security' => 'all', // which inputs should be encrypted in cache - none, firstKeyUnsecure (i.e. username), all
         'flash' => true,
-        'redirectUrl' => ['action' => 'login'],
+        'redirectUrl' => '/',
+        'data' => null, // uses request->getData if null, otherwise provide an array of input data
     ];
 
     /**
@@ -44,21 +45,23 @@ class BruteForceProtectionComponent extends Component
         }
         $controller = $this->_registry->getController();
 
-        $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . $ip . '.' . md5(serialize($config));
-        $ip_data = Cache::read($key);
-
         // Check and record attempts input data against config
+        if ($config['data'] === null) {
+            $data = $this->request->getData();
+        } else {
+            $data = $config['data'];
+        }
         $challengeData = [];
         foreach ($config['keyNames'] as $keyName) {
-            if (!$challengeData[$keyName] = $controller->request->getData($keyName)) {
-                return; // not being challenged
+            $challengeData[$keyName] = empty($data[$keyName]) ? '' : $data[$keyName];
+            if (!$challengeData[$keyName]) {
+                return; // not being challenged or empty challenge - do not count
             }
         }
 
         // prepare cache object for this IP address and this $config instance
         $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . $ip . '.' . md5(serialize($config));
+        $key = 'BruteForceData.' . $ip . '.' . $config['name'];
         $ip_data = Cache::read($key);
 
         if (empty($ip_data)) {
@@ -79,7 +82,6 @@ class BruteForceProtectionComponent extends Component
             $newAttempt['firstKey'] = password_hash($challengeData[$config['keyNames'][0]], PASSWORD_DEFAULT);
             $newAttempt['challengeDataHash'] = password_hash(serialize($challengeData), PASSWORD_DEFAULT);
         }
-
         // remove old attempts based on configured time window
         $ip_data['attempts'] = array_filter($ip_data['attempts'], function ($attempt) use ($config) {
             return ($attempt['time'] > (time() - $config['timeWindow']));
@@ -98,6 +100,8 @@ class BruteForceProtectionComponent extends Component
         foreach ($attemptedChallenges as $existingChallengeDataHash) {
             if ($config['security'] === 'none') {
                 if (serialize($challengeData) == $existingChallengeDataHash) {
+                    debug(serialize($challengeData));
+                    debug($existingChallengeDataHash);
                     return;
                 }
             } else {
@@ -117,5 +121,24 @@ class BruteForceProtectionComponent extends Component
         }
         $ip_data['attempts'][] = $newAttempt;
         Cache::write($key, $ip_data);
+    }
+
+    /**
+     * @param string $id
+     * @param string $key unique string related to this type of challenge
+     */
+    public function recordFail($ip, $key)
+    {
+        $key = 'BruteForceData.' . $ip . '.' . $key;
+        $ip_data = Cache::read($key);
+
+        if (empty($ip_data)) {
+            // first login attempt - initialize data for cache
+            $ip_data = ['attempts' => []];
+        }
+        // this new attempt
+        $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
+
+
     }
 }
