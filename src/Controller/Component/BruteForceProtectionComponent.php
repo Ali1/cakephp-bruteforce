@@ -100,8 +100,6 @@ class BruteForceProtectionComponent extends Component
         foreach ($attemptedChallenges as $existingChallengeDataHash) {
             if ($config['security'] === 'none') {
                 if (serialize($challengeData) == $existingChallengeDataHash) {
-                    debug(serialize($challengeData));
-                    debug($existingChallengeDataHash);
                     return;
                 }
             } else {
