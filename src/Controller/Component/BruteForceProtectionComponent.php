@@ -47,7 +47,7 @@ class BruteForceProtectionComponent extends Component
 
         // Check and record attempts input data against config
         if ($config['data'] === null) {
-            $data = $this->request->getData();
+            $data = $this->getController()->request->getData();
         } else {
             $data = $config['data'];
         }
@@ -122,7 +122,7 @@ class BruteForceProtectionComponent extends Component
     }
 
     /**
-     * @param string $id
+     * @param string $ip
      * @param string $key unique string related to this type of challenge
      */
     public function recordFail($ip, $key)
