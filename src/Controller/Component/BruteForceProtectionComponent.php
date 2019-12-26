@@ -47,7 +47,7 @@ class BruteForceProtectionComponent extends Component
 
         // Check and record attempts input data against config
         if ($config['data'] === null) {
-            $data = $this->getController()->request->getData();
+            $data = $this->getController()->getRequest()->getData();
         } else {
             $data = $config['data'];
         }
@@ -61,7 +61,7 @@ class BruteForceProtectionComponent extends Component
 
         // prepare cache object for this IP address and this $config instance
         $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . $ip . '.' . $config['name'];
+        $key = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $config['name'];
         $ip_data = Cache::read($key);
 
         if (empty($ip_data)) {
@@ -127,7 +127,7 @@ class BruteForceProtectionComponent extends Component
      */
     public function recordFail($ip, $key)
     {
-        $key = 'BruteForceData.' . $ip . '.' . $key;
+        $key = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $key;
         $ip_data = Cache::read($key);
 
         if (empty($ip_data)) {
