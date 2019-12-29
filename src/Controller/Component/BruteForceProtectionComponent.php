@@ -28,7 +28,7 @@ class BruteForceProtectionComponent extends Component
         'firstKeyAttemptLimit' => false, // can be used for example when you want tighter limits on username
         'security' => 'all', // which inputs should be encrypted in cache - none, firstKeyUnsecure (i.e. username), all
         'flash' => true,
-        'redirectUrl' => '/',
+        'redirectUrl' => null, // redirect to self
         'data' => null, // uses request->getData if null, otherwise provide an array of input data
     ];
 
