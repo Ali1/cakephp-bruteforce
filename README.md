@@ -9,6 +9,7 @@
 A CakePHP plugin for dropping in Brute Force Protection to your controllers and methods. 
 
 ### Features
+* IP address-based protection
 * Uses cache to store attempts so no database installation necessary
 * Logs blocked attempts (uses CakePHP Logs)
 * Does not count re-attempts with same challenge details (e.g. if a user tries the same username/password combination a few times)
@@ -42,37 +43,65 @@ or you can use the following shell command to enable to plugin in your bootstrap
 bin/cake plugin load BruteForceProtection
 ```
 
-### Functions
+### Basic Use
+
+Load the component:
+````php
+// in AppController.php or any controller
+
+
+// Either:
+    public $components = ['BruteForceProtection.BruteForceProtection'];
+
+// or:
+    public function initialize(): void
+    {
+        parent::initialize();
+        $this->loadComponent('BruteForceProtection.BruteForceProtection');
+    }
+````
+
+Apply protection (run this prior to actually verifying or actioning the user submitted data)
 
 ````php
-    /**
-     * @param string $name a unique string to store the data under (different $name for different uses of Brute
- *                          force protection within the same application.
-     * @param array $keyNames the key names in the data whose combinations will be checked
-     * @param array $data can use $this->request->getData() or any other array, or for BruteForce of single
-     *                              value, you can enter a string alone
-     * @param array $config options
-     * @return void
-     */
-    public function applyProtection(string $name, array $keyNames, array $data, array $config = [])
+    public function login(): void
+    {
+        $config = [
+            // my own configuration
+        ];
+        /**
+         * @param string $name a unique string to store the data under (different $name for different uses of Brute
+     *                          force protection within the same application.
+         * @param array $keyNames an array of key names in the data that you intend to interrogate
+         * @param array $data an array of data, can use $this->request->getData()
+         * @param array $config options
+         * @return void
+         */
+        $this->BruteForceProtection->applyProtection(
+            'login',
+            ['username', 'password'],
+            $this->requst->getData(),
+            [],            
+        );
+        
+        // the user will never get here if fails Brute Force Protection
+        // usual login code here
+    }
 ````
 
 ### Configuration Options
 
 The fourth argument for `applyProtection` is the $config argument.
 
-````php
-    public $_defaultConfig = [
-        'timeWindow' => 300, // 5 minutes
-        'totalAttemptsLimit' => 8,
-        'firstKeyAttemptLimit' => null, // use integer smaller than totalAttemptsLimit to make tighter restrictions on
-        //                                  repeated tries on first key (i.e. 5 tries with a single username, but then
-        //                                  can try a few more times if realises the username was wrong
-        'unencryptedKeyNames' => [], // keysName for which the data will be stored unencrypted in cache (i.e. usernames)
-        'flash' => 'Login attempts have been blocked for a few minutes. Please try again later.', // null for no Flash
-        'redirectUrl' => null, // redirect to self
-    ];
-````
+|Configuration Key|Default Value|Details|
+|---|---|---|
+|timeWindow|300|Time in seconds until Brute Force Protection resets|
+|totalAttemptsLimit|8|Number of attempts before user is blocked|
+|firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (e.g. username) - see below for example|
+|unencryptedKeyNames|[]|keysName for which the data will be stored unencrypted in cache (i.e. usernames)|
+|flash|Login attempts have been blocked for a few minutes. Please try again later.|null for no Flash message|
+|redirectUrl|null|null to redirect to self otherwise use a URL to go there once blocked|
+
 
 ### Usage
 

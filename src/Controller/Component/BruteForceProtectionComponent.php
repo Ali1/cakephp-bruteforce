@@ -39,11 +39,13 @@ class BruteForceProtectionComponent extends Component
     }
 
     /**
-     * @param string $name
-     * @param array $keyNames the key names in the data whose combinations will be checked
-     * @param array $data can use $this->request->getData() or any other array, or for BruteForce of single
-     *                              value, you can enter a string alone
+    /**
+     * @param string $name a unique string to store the data under (different $name for different uses of Brute
+     *                          force protection within the same application.
+     * @param array $keyNames an array of key names in the data that you intend to interrogate
+     * @param array $data an array of data, can use $this->request->getData()
      * @param array $config options
+     *
      * @return void
      */
     public function applyProtection(string $name, array $keyNames, array $data, array $config = [])
