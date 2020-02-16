@@ -19,19 +19,42 @@ class BruteForceProtectionComponentTestController extends Controller {
         $this->loadComponent('BruteForceProtection.BruteForceProtection');
 	}
 
-	public function login(): void {
-	    $this->autoRender = false;
-	    $this->BruteForceProtection->applyProtection(
-	        'login',
+    public function login(): void {
+        $this->autoRender = false;
+        $this->BruteForceProtection->applyProtection(
+            'login',
             ['username', 'password'],
             $this->getRequest()->getData(),
-            ['totalAttemptsLimit' => 3]
+            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
         );
-	    if ($this->getRequest()->getData('username') === 'admin' && $this->getRequest()->getData('password') === 'correct') {
-	        $this->set(
-	            'correct',
-                ($this->getRequest()->getData('username') === 'admin' && $this->getRequest()->getData('password') === 'correct')
-            );
-        }
+    }
+    public function loginEncrypted(): void {
+        $this->autoRender = false;
+        $this->BruteForceProtection->applyProtection(
+            'loginEncrypted',
+            ['username', 'password'],
+            $this->getRequest()->getData(),
+            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3]
+        );
+    }
+
+    public function loginByUrl($secret): void {
+        $this->autoRender = false;
+        $this->BruteForceProtection->applyProtection(
+            'loginByUrl',
+            ['secret'],
+            ['secret' => $secret],
+            ['totalAttemptsLimit' => 2]
+        );
+    }
+
+    public function shortTimeWindow($secret): void {
+        $this->autoRender = false;
+        $this->BruteForceProtection->applyProtection(
+            'loginByUrl',
+            ['secret'],
+            ['secret' => $secret],
+            ['totalAttemptsLimit' => 1, 'timeWindow' => 4]
+        );
     }
 }

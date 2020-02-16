@@ -16,13 +16,13 @@ declare(strict_types=1);
  */
 namespace BruteForceProtection\Exception;
 
-use Cake\Core\Exception\Exception;
+use Cake\Http\Exception\ForbiddenException;
 use Psr\SimpleCache\InvalidArgumentException as InvalidArgumentInterface;
 
 /**
  * Exception raised when cache keys are invalid.
  */
-class TooManyAttemptsException extends Exception implements InvalidArgumentInterface
+class TooManyAttemptsException extends ForbiddenException implements InvalidArgumentInterface
 {
     /**
      * Constructor

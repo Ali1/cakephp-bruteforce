@@ -1,5 +1,48 @@
+# User specific & automatically generated files #
+#################################################
+/build
+/dist
+/tags
+/composer.lock
+/phpunit.xml
+/phpcs.xml
 /vendor
-vendor
-vendor/
-.idea
-composer.lock
+/vendors
+/composer.phar
+*.mo
+debug.log
+error.log
+.phpunit.result.cache
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# Tool specific files #
+#######################
+# vim
+*~
+*.swp
+*.swo
+# sublime text & textmate
+*.sublime-*
+*.stTheme.cache
+*.tmlanguage.cache
+*.tmPreferences.cache
+# Eclipse
+.settings/*
+/.project
+/.buildpath
+# JetBrains, aka PHPStorm, IntelliJ IDEA
+.idea/*
+# NetBeans
+nbproject/*
+# Visual Studio Code
+.vscode

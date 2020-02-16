@@ -74,7 +74,7 @@ class BruteForceProtectionComponent extends Component
 
         // prepare cache object for this IP address and this $config instance
         $ip = $_SERVER['REMOTE_ADDR'];
-        $cacheKey = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $name;
+        $cacheKey = 'BruteForceData.' . str_replace(':', '.', $ip) . '.' . $name;
 
         $ip_data = Cache::read($cacheKey, $config['cacheName']);
 
@@ -83,9 +83,6 @@ class BruteForceProtectionComponent extends Component
             $ip_data = ['attempts' => []];
         }
 
-        // this new attempt
-        $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
-
         $securedChallengeData = $challengeData;
         foreach ($challengeData as $key => $datum) {
             if (!in_array($key, $config['unencryptedKeyNames'])) {
@@ -93,8 +90,7 @@ class BruteForceProtectionComponent extends Component
             }
         }
 
-        $newAttempt['firstKey'] = $securedChallengeData[$keyNames[0]];
-        $newAttempt['challengeDataHash'] = serialize($securedChallengeData);
+        $unencryptedFirstKey = $challengeData[$keyNames[0]];
 
         // remove old attempts based on configured time window
         $ip_data['attempts'] = array_filter($ip_data['attempts'], function ($attempt) use ($config) {
@@ -105,8 +101,17 @@ class BruteForceProtectionComponent extends Component
         $total_attempts = count($ip_data['attempts']);
         $attemptedChallenges = Hash::extract($ip_data['attempts'], '{n}.challengeDataHash');
         $first_key_attempts = 0;
-        foreach ($ip_data['attempts'] as $k => $attempt) {
-            if ($config['firstKeyAttemptLimit'] && $newAttempt['firstKey'] == $attempt['firstKey']) {
+        if ($config['firstKeyAttemptLimit']) {
+            foreach ($ip_data['attempts'] as $k => $attempt) {
+                if (in_array($keyNames[0], $config['unencryptedKeyNames'])) {
+                    if($unencryptedFirstKey !== $attempt['firstKey']) {
+                        continue;
+                    }
+                } else {
+                    if (!password_verify($unencryptedFirstKey, $attempt['firstKey'])) {
+                        continue;
+                    }
+                }
                 $first_key_attempts++;
             }
         }
@@ -136,6 +141,11 @@ class BruteForceProtectionComponent extends Component
             Log::alert("Blocked login attempt\nIP: $ip\n\n", serialize($ip_data));
             throw new TooManyAttemptsException();
         }
+
+        // this new attempt
+        $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
+        $newAttempt['firstKey'] = $securedChallengeData[$keyNames[0]];
+        $newAttempt['challengeDataHash'] = serialize($securedChallengeData);
         $ip_data['attempts'][] = $newAttempt;
 
         Cache::write($cacheKey, $ip_data, $config['cacheName']);

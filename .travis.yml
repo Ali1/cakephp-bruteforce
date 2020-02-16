@@ -1,0 +1,67 @@
+language: php
+
+dist: xenial
+
+cache:
+  directories:
+    - vendor
+    - $HOME/.composer/cache
+
+php:
+  - 7.3
+
+env:
+  global:
+    - CODECOVERAGE=1
+
+matrix:
+  fast_finish: true
+
+  include:
+    - php: 7.2
+      env: PREFER_LOWEST=1 CODECOVERAGE=0
+
+before_install:
+  - echo cakephp version && tail -1 VERSION.txt
+
+  - |
+    if [[ $CODECOVERAGE == 1 ]]; then
+      pecl channel-update pecl.php.net
+      pecl install pcov
+    fi
+
+  - phpenv config-rm xdebug.ini
+
+  - echo 'extension = memcached.so' >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini;
+  - echo 'extension = redis.so' >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo 'extension = apcu.so' >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo 'apc.enable_cli = 1' >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  - sudo locale-gen da_DK.UTF-8
+
+install:
+  - |
+    if [[ $CODECOVERAGE == 1 ]]; then
+      composer install --prefer-dist --no-interaction
+    else
+      composer update --prefer-lowest --prefer-stable --no-interaction
+    fi
+
+script:
+  - |
+    if [[ $CODECOVERAGE == 1 ]]; then
+      vendor/bin/phpunit --verbose --coverage-clover=clover.xml
+    else
+      vendor/bin/phpunit --verbose
+    fi
+
+after_success:
+  - |
+    if [[ $CODECOVERAGE == 1 ]]; then
+      wget https://github.com/php-coveralls/php-coveralls/releases/download/v2.1.0/php-coveralls.phar
+      chmod +x php-coveralls.phar
+      ./php-coveralls.phar
+    fi
+
+notifications:
+  email: false
