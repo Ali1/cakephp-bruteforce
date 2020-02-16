@@ -33,7 +33,7 @@ Then in your Application.php in your project root, add the following snippet:
 
 ```php
 // In project_root/Application.php:
-        $this->addPlugin('BruteForceProtection');
+        $this->addPlugin('BruteForceProtection.BruteForceProtection');
 ```
 
 or you can use the following shell command to enable to plugin in your bootstrap.php automatically:
@@ -79,7 +79,7 @@ The fourth argument for `applyProtection` is the $config argument.
 
 ```php
 // UsersController.php
-    public $components = ['BruteForceProtection'];
+    public $components = ['BruteForceProtection.BruteForceProtection'];
     
     ...
     
@@ -144,7 +144,3 @@ Although not ideal, when using plugins that you do not wish to extend, you can s
         );
         // this will not affect any other action except ones containing the username and password data points in $this->request->getData()
 ```
-
-#### Other uses
-
-Designed to work with other data but no examples available.
