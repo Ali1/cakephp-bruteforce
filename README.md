@@ -61,14 +61,12 @@ Load the component:
     }
 ````
 
-Apply protection (run this prior to actually verifying or actioning the user submitted data)
+Apply protection (`$this->BruteForceProtection->applyProtection` must come before actually verifying or actioning the user submitted data)
 
 ````php
     public function login(): void
     {
-        $config = [
-            // my own configuration
-        ];
+        $config = [];
         /**
          * @param string $name a unique string to store the data under (different $name for different uses of Brute
      *                          force protection within the same application.
@@ -81,7 +79,7 @@ Apply protection (run this prior to actually verifying or actioning the user sub
             'login',
             ['username', 'password'],
             $this->requst->getData(),
-            [],            
+            $config,            
         );
         
         // the user will never get here if fails Brute Force Protection
@@ -91,7 +89,7 @@ Apply protection (run this prior to actually verifying or actioning the user sub
 
 ### Configuration Options
 
-The fourth argument for `applyProtection` is the $config argument.
+The fourth argument for `applyProtection` is the $config array argument.
 
 |Configuration Key|Default Value|Details|
 |---|---|---|
