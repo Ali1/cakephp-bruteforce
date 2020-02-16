@@ -46,7 +46,8 @@ bin/cake plugin load BruteForceProtection
 
 ````php
     /**
-     * @param array $config
+     * @param string $name a unique string to store the data under (different $name for different uses of Brute
+ *                          force protection within the same application.
      * @param array $keyNames the key names in the data whose combinations will be checked
      * @param array $data can use $this->request->getData() or any other array, or for BruteForce of single
      *                              value, you can enter a string alone
