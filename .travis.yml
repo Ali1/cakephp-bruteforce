@@ -55,6 +55,8 @@ script:
       vendor/bin/phpunit --verbose
     fi
 
+  - if [[ $CHECKS == 1 ]]; then composer cs-check; fi
+
 after_success:
   - |
     if [[ $CODECOVERAGE == 1 ]]; then
