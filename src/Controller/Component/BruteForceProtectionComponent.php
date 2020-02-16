@@ -3,56 +3,63 @@ namespace BruteForceProtection\Controller\Component;
 
 use Cake\Cache\Cache;
 use Cake\Controller\Component;
+use Cake\Controller\ComponentRegistry;
 use Cake\Log\Log;
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
 
-/**
- * @property \Cake\Controller\Component\FlashComponent $Flash
- */
 class BruteForceProtectionComponent extends Component
 {
     /**
-     * @var array
+     * @var \App\Controller\AppController
      */
-    public $components = ['Flash'];
+    private $Controller;
 
     /**
      * @var array
      */
     public $_defaultConfig = [
-        'name' => 'login', // important to set if application uses component in more than 1 process
         'timeWindow' => 300, // 5 minutes
         'totalAttemptsLimit' => 8,
-        'keyNames' => ['username', 'password'],
-        'firstKeyAttemptLimit' => false, // can be used for example when you want tighter limits on username
-        'security' => 'all', // which inputs should be encrypted in cache - none, firstKeyUnsecure (i.e. username), all
-        'flash' => true,
+        'firstKeyAttemptLimit' => null, // use integer smaller than totalAttemptsLimit to make tighter restrictions on
+        //                                  repeated tries on first key (i.e. 5 tries with a single username, but then
+        //                                  can try a few more times if realises the username was wrong
+        'unencryptedKeyNames' => [], // keysName for which the data will be stored unencrypted in cache (i.e. usernames)
+        'flash' => 'Login attempts have been blocked for a few minutes. Please try again later.', // null for no Flash
         'redirectUrl' => null, // redirect to self
-        'data' => null, // uses request->getData if null, otherwise provide an array of input data
     ];
 
     /**
+     * @inheritDoc
+     */
+    public function __construct(ComponentRegistry $registry, array $config = [])
+    {
+        parent::__construct($registry, $config);
+        $this->Controller = $this->_registry->getController();
+    }
+
+    /**
      * @param array $config
-     *
+     * @param array $keyNames the key names in the data whose combinations will be checked
+     * @param array $data can use $this->request->getData() or any other array, or for BruteForce of single
+     *                              value, you can enter a string alone
+     * @param array $config options
      * @return void
      */
-    public function applyProtection(array $config)
+    public function applyProtection(string $name, array $keyNames, array $data, array $config = [])
     {
         $config = array_merge($this->getConfig(), $config);
-        if (is_string($config['keyNames'])) {
-            $config['keyNames'] = [$config['keyNames']];
-        }
-        $controller = $this->_registry->getController();
 
-        // Check and record attempts input data against config
-        if ($config['data'] === null) {
-            $data = $this->getController()->getRequest()->getData();
-        } else {
-            $data = $config['data'];
-        }
         $challengeData = [];
-        foreach ($config['keyNames'] as $keyName) {
+
+        foreach (array_keys($data) as $key) {
+            if (is_int($key)) {
+                throw new \InvalidArgumentException('Keys for data cannot be integers');
+                // data = [$password]. Must be data = ['password' => $password]
+            }
+        }
+
+        foreach ($keyNames as $keyName) {
             $challengeData[$keyName] = empty($data[$keyName]) ? '' : $data[$keyName];
             if (!$challengeData[$keyName]) {
                 return; // not being challenged or empty challenge - do not count
@@ -61,8 +68,9 @@ class BruteForceProtectionComponent extends Component
 
         // prepare cache object for this IP address and this $config instance
         $ip = $_SERVER['REMOTE_ADDR'];
-        $key = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $config['name'];
-        $ip_data = Cache::read($key);
+        $cacheKey = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $name;
+
+        $ip_data = Cache::read($cacheKey);
 
         if (empty($ip_data)) {
             // first login attempt - initialize data for cache
@@ -72,16 +80,16 @@ class BruteForceProtectionComponent extends Component
         // this new attempt
         $newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
 
-        if ($config['security'] === 'none') {
-            $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
-            $newAttempt['challengeDataHash'] = serialize($challengeData);
-        } elseif ($config['security'] === 'firstKeyUnsecure') {
-            $newAttempt['firstKey'] = $challengeData[$config['keyNames'][0]];
-            $newAttempt['challengeDataHash'] = password_hash(serialize($challengeData), PASSWORD_DEFAULT);
-        } else {
-            $newAttempt['firstKey'] = password_hash($challengeData[$config['keyNames'][0]], PASSWORD_DEFAULT);
-            $newAttempt['challengeDataHash'] = password_hash(serialize($challengeData), PASSWORD_DEFAULT);
+        $securedChallengeData = $challengeData;
+        foreach ($challengeData as $key => $datum) {
+            if (!in_array($key, $config['unencryptedKeyNames'])) {
+                $securedChallengeData[$key] = password_hash($datum, PASSWORD_DEFAULT);
+            }
         }
+
+        $newAttempt['firstKey'] = $securedChallengeData[$keyNames[0]];
+        $newAttempt['challengeDataHash'] = serialize($securedChallengeData);
+
         // remove old attempts based on configured time window
         $ip_data['attempts'] = array_filter($ip_data['attempts'], function ($attempt) use ($config) {
             return ($attempt['time'] > (time() - $config['timeWindow']));
@@ -96,29 +104,39 @@ class BruteForceProtectionComponent extends Component
                 $first_key_attempts++;
             }
         }
+
         // don't count this as a challenge if it's a repeat of a previous combination
         foreach ($attemptedChallenges as $existingChallengeDataHash) {
-            if ($config['security'] === 'none') {
-                if (serialize($challengeData) == $existingChallengeDataHash) {
-                    return;
-                }
-            } else {
-                if (password_verify(serialize($challengeData), $existingChallengeDataHash)) {
-                    return; // has been counted previously
+            $existingChallengeData = unserialize($existingChallengeDataHash);
+            if (array_keys($securedChallengeData) !== array_keys($existingChallengeData)) {
+                continue;
+            }
+
+            foreach ($challengeData as $key => $datum) {
+                if (in_array($key, $config['unencryptedKeyNames'])) {
+                    if ($datum !== $existingChallengeData[$key]) {
+                        continue(2);
+                    }
+                } else {
+                    if (!password_verify($datum, $existingChallengeData[$key])) {
+                        continue(2);
+                    }
                 }
             }
+            return; // if got to here, that means exactly same attempt previously - do not count
         }
 
         if ($total_attempts > $config['totalAttemptsLimit'] || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])) {
             Log::alert("Blocked login attempt\nIP: $ip\n\n", serialize($ip_data));
             if ($config['flash']) {
-                $this->Flash->error('Login attempts have been blocked for a few minutes. Please try again later.');
+                $this->Controller->Flash->error($config['flash']);
             }
             header('Location: ' . Router::url($config['redirectUrl']));
             die();
         }
         $ip_data['attempts'][] = $newAttempt;
-        Cache::write($key, $ip_data);
+
+        Cache::write($cacheKey, $ip_data);
     }
 
     /**
