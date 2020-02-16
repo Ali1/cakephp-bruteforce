@@ -2,8 +2,10 @@
 namespace BruteForceProtection\Controller\Component;
 
 use Cake\Cache\Cache;
+use Cake\Cache\InvalidArgumentException;
 use Cake\Controller\Component;
 use Cake\Controller\ComponentRegistry;
+use Cake\Core\Configure;
 use Cake\Log\Log;
 use Cake\Routing\Router;
 use Cake\Utility\Hash;
@@ -11,7 +13,7 @@ use Cake\Utility\Hash;
 class BruteForceProtectionComponent extends Component
 {
     /**
-     * @var \App\Controller\AppController
+     * @var \Cake\Controller\Controller
      */
     private $Controller;
 
@@ -19,6 +21,7 @@ class BruteForceProtectionComponent extends Component
      * @var array
      */
     public $_defaultConfig = [
+        'cacheName' => 'default',
         'timeWindow' => 300, // 5 minutes
         'totalAttemptsLimit' => 8,
         'firstKeyAttemptLimit' => null, // use integer smaller than totalAttemptsLimit to make tighter restrictions on
@@ -48,9 +51,18 @@ class BruteForceProtectionComponent extends Component
      *
      * @return void
      */
-    public function applyProtection(string $name, array $keyNames, array $data, array $config = [])
+    public function applyProtection(string $name, array $keyNames, array $data, array $config = []): void
     {
         $config = array_merge($this->getConfig(), $config);
+
+        $cacheExpires = Configure::read('Cache');
+
+        if ($cacheExpires && (strtotime($cacheExpires) - time()) < $config['timeWindow']) {
+            throw new InvalidArgumentException(
+                'Your cache duration setting (' . (strtotime($cacheExpires) - time()) . ' sec) is too short'
+                . ' to use for Brute Force Protection'
+            );
+        }
 
         $challengeData = [];
 

@@ -10,7 +10,7 @@ A CakePHP plugin for dropping in Brute Force Protection to your controllers and 
 
 ### Features
 * IP address-based protection
-* Uses cache to store attempts so no database installation necessary
+* Uses the Cache class to store attempts so no database installation necessary
 * Logs blocked attempts (uses CakePHP Logs)
 * Does not count re-attempts with same challenge details (e.g. if a user tries the same username/password combination a few times)
 * Can block multiple attempts at the same username earlier than the normal limit (to give users a chance to enter the correct username if they have been trying with the wrong one)
@@ -21,6 +21,7 @@ A CakePHP plugin for dropping in Brute Force Protection to your controllers and 
 * Composer
 * CakePHP 4.0+
 * PHP 7.2+
+* Cache
 
 ### Installation
 
@@ -49,15 +50,12 @@ Load the component:
 ````php
 // in AppController.php or any controller
 
-
-// Either:
-    public $components = ['BruteForceProtection.BruteForceProtection'];
-
-// or:
     public function initialize(): void
     {
         parent::initialize();
         $this->loadComponent('BruteForceProtection.BruteForceProtection');
+
+        // or with configuration
     }
 ````
 
@@ -93,6 +91,7 @@ The fourth argument for `applyProtection` is the $config array argument.
 
 |Configuration Key|Default Value|Details|
 |---|---|---|
+|cacheName|default|The CakePHP Cache configuration to use|
 |timeWindow|300|Time in seconds until Brute Force Protection resets|
 |totalAttemptsLimit|8|Number of attempts before user is blocked|
 |firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (e.g. username) - see below for example|
@@ -120,10 +119,11 @@ The fourth argument for `applyProtection` is the $config array argument.
             $this->request->getData(), // user entered data
             [
                 'totalAttemptsLimit' => 10,
-                'firstKeyAttemptLimit' => 7, // 7 attempts if same username, but then allow another 3 if user tries
-                                            //different username
-                'unencryptedKeyNames' => ['username'] // when storing users history, which is needed to ignore duplicate challenges, 
-                                                        // not all data needs to be encrypted. Useful for monitoring/debugging.
+                'firstKeyAttemptLimit' => 7, // 7 attempts if same username, the block. But then allow another 3 if// 
+                                             // tries with different username to reach 10 attempts total
+                'unencryptedKeyNames' => ['username'] // when storing users history, which is needed to ignore
+                                                        //duplicate challenges, not all data needs to be encrypted.
+                                                        //Useful for logging/monitoring/debugging.
             ], // options, see below
         );
         // login code
@@ -140,12 +140,8 @@ Non-form data can also be Brute Forced
      *
      * @return void
      */
-    public function publicAuthUrl(?string $hashedid = null): void
+    public function publicAuthUrl(string $hashedid): void
     {
-        if (!$hashedid) {
-            // error or redirect
-        }
-
         $this->BruteForceProtection->applyProtection(
             'publicHash',
             ['hashedid'],
