@@ -31,8 +31,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "BruteForceProtection\\Test\\": "tests",
-            "Cake\\Test\\": "./vendor/cakephp/cakephp/tests"
+            "BruteForceProtection\\": "src",
+            "TestApp\\": "tests/TestApp/src/"
         }
     }
 }

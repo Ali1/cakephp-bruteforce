@@ -1,6 +1,7 @@
 <?php
 namespace BruteForceProtection\Controller\Component;
 
+use BruteForceProtection\Exception\TooManyAttemptsException;
 use Cake\Cache\Cache;
 use Cake\Cache\InvalidArgumentException;
 use Cake\Controller\Component;
@@ -28,8 +29,6 @@ class BruteForceProtectionComponent extends Component
         //                                  repeated tries on first key (i.e. 5 tries with a single username, but then
         //                                  can try a few more times if realises the username was wrong
         'unencryptedKeyNames' => [], // keysName for which the data will be stored unencrypted in cache (i.e. usernames)
-        'flash' => 'Login attempts have been blocked for a few minutes. Please try again later.', // null for no Flash
-        'redirectUrl' => null, // redirect to self
     ];
 
     /**
@@ -49,20 +48,13 @@ class BruteForceProtectionComponent extends Component
      * @param array $data an array of data, can use $this->request->getData()
      * @param array $config options
      *
+     * @throws \BruteForceProtection\Exception\TooManyAttemptsException
+     *
      * @return void
      */
     public function applyProtection(string $name, array $keyNames, array $data, array $config = []): void
     {
         $config = array_merge($this->getConfig(), $config);
-
-        $cacheExpires = Configure::read('Cache');
-
-        if ($cacheExpires && (strtotime($cacheExpires) - time()) < $config['timeWindow']) {
-            throw new InvalidArgumentException(
-                'Your cache duration setting (' . (strtotime($cacheExpires) - time()) . ' sec) is too short'
-                . ' to use for Brute Force Protection'
-            );
-        }
 
         $challengeData = [];
 
@@ -84,7 +76,7 @@ class BruteForceProtectionComponent extends Component
         $ip = $_SERVER['REMOTE_ADDR'];
         $cacheKey = 'BruteForceData.' . str_replace(":", ".", $ip) . '.' . $name;
 
-        $ip_data = Cache::read($cacheKey);
+        $ip_data = Cache::read($cacheKey, $config['cacheName']);
 
         if (empty($ip_data)) {
             // first login attempt - initialize data for cache
@@ -142,15 +134,11 @@ class BruteForceProtectionComponent extends Component
 
         if ($total_attempts > $config['totalAttemptsLimit'] || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])) {
             Log::alert("Blocked login attempt\nIP: $ip\n\n", serialize($ip_data));
-            if ($config['flash']) {
-                $this->Controller->Flash->error($config['flash']);
-            }
-            header('Location: ' . Router::url($config['redirectUrl']));
-            die();
+            throw new TooManyAttemptsException();
         }
         $ip_data['attempts'][] = $newAttempt;
 
-        Cache::write($cacheKey, $ip_data);
+        Cache::write($cacheKey, $ip_data, $config['cacheName']);
     }
 
     /**

@@ -56,6 +56,7 @@ Load the component:
         $this->loadComponent('BruteForceProtection.BruteForceProtection');
 
         // or with configuration
+        $this->loadComponent('BruteForceProtection.BruteForceProtection', ['cacheName' => 'BruteForceProtection']);
     }
 ````
 
@@ -64,7 +65,8 @@ Apply protection (`$this->BruteForceProtection->applyProtection` must come befor
 ````php
     public function login(): void
     {
-        $config = [];
+        $config = []; // see possible options below
+
         /**
          * @param string $name a unique string to store the data under (different $name for different uses of Brute
      *                          force protection within the same application.
@@ -81,6 +83,7 @@ Apply protection (`$this->BruteForceProtection->applyProtection` must come befor
         );
         
         // the user will never get here if fails Brute Force Protection
+        // a TooManyAttemptsException will be thrown
         // usual login code here
     }
 ````
@@ -91,13 +94,11 @@ The fourth argument for `applyProtection` is the $config array argument.
 
 |Configuration Key|Default Value|Details|
 |---|---|---|
-|cacheName|default|The CakePHP Cache configuration to use|
+|cacheName|default|The CakePHP Cache configuration to use. Make sure to use one with a duration longer than your time window otherwise you will not be protected.|
 |timeWindow|300|Time in seconds until Brute Force Protection resets|
 |totalAttemptsLimit|8|Number of attempts before user is blocked|
 |firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (e.g. username) - see below for example|
 |unencryptedKeyNames|[]|keysName for which the data will be stored unencrypted in cache (i.e. usernames)|
-|flash|Login attempts have been blocked for a few minutes. Please try again later.|null for no Flash message|
-|redirectUrl|null|null to redirect to self otherwise use a URL to go there once blocked|
 
 
 ### Usage
@@ -142,12 +143,17 @@ Non-form data can also be Brute Forced
      */
     public function publicAuthUrl(string $hashedid): void
     {
-        $this->BruteForceProtection->applyProtection(
-            'publicHash',
-            ['hashedid'],
-            ['hashedid' => $hashedid],
-            ['totalAttemptsLimit' => 5, 'unencryptedKeyNames' => ['hashedid'], 'redirectUrl' => '/'],
-        );
+        try {
+            $this->BruteForceProtection->applyProtection(
+                'publicHash',
+                ['hashedid'],
+                ['hashedid' => $hashedid],
+                ['totalAttemptsLimit' => 5, 'unencryptedKeyNames' => ['hashedid']],
+            );
+        } catch (\BruteForceProtection\Exception\TooManyAttemptsException $e) {
+            $this->Flash->error('Too many requests attempted. Please try again in a few minutes');
+            return $this->redirect('/');
+        }
         
         // then check if URL is actually valid
 ````

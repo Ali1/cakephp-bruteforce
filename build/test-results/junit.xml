@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="plugin" tests="2" assertions="0" errors="2" warnings="0" failures="0" skipped="0" time="0.021813">
+    <testsuite name="BruteForceProtection\Test\TestCase\Controller\Component\BruteForceProtectionComponentTest" file="C:\Users\alib\htdocs\cakephp-brute-force-protection\tests\TestCase\Controller\Component\BruteForceProtectionComponentTest.php" tests="2" assertions="0" errors="2" warnings="0" failures="0" skipped="0" time="0.021813">
+      <testcase name="testInitialization" class="BruteForceProtection\Test\TestCase\Controller\Component\BruteForceProtectionComponentTest" classname="BruteForceProtection.Test.TestCase.Controller.Component.BruteForceProtectionComponentTest" file="C:\Users\alib\htdocs\cakephp-brute-force-protection\tests\TestCase\Controller\Component\BruteForceProtectionComponentTest.php" line="55" assertions="0" time="0.021486">
+        <error type="Error">BruteForceProtection\Test\TestCase\Controller\Component\BruteForceProtectionComponentTest::testInitialization
+Error: Class 'TestApp\Controller\BruteForceProtectionComponentTestController' not found
+
+C:\Users\alib\htdocs\cakephp-brute-force-protection\tests\TestCase\Controller\Component\BruteForceProtectionComponentTest.php:35
+</error>
+      </testcase>
+      <testcase name="testLoginProtection" class="BruteForceProtection\Test\TestCase\Controller\Component\BruteForceProtectionComponentTest" classname="BruteForceProtection.Test.TestCase.Controller.Component.BruteForceProtectionComponentTest" file="C:\Users\alib\htdocs\cakephp-brute-force-protection\tests\TestCase\Controller\Component\BruteForceProtectionComponentTest.php" line="60" assertions="0" time="0.000327">
+        <error type="Error">BruteForceProtection\Test\TestCase\Controller\Component\BruteForceProtectionComponentTest::testLoginProtection
+Error: Class 'TestApp\Controller\BruteForceProtectionComponentTestController' not found
+
+C:\Users\alib\htdocs\cakephp-brute-force-protection\tests\TestCase\Controller\Component\BruteForceProtectionComponentTest.php:35
+</error>
+      </testcase>
+    </testsuite>
+  </testsuite>
+</testsuites>
