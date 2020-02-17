@@ -10,17 +10,10 @@
         <ini name="error_reporting" value="32767"/>
     </php>
     <testsuites>
-        <testsuite name="BruteForceProtection">
+        <testsuite name="Bruteforce">
             <directory>tests/</directory>
         </testsuite>
     </testsuites>
-    <listeners>
-        <listener class="\Cake\TestSuite\Fixture\FixtureInjector">
-            <arguments>
-                <object class="\Cake\TestSuite\Fixture\FixtureManager"/>
-            </arguments>
-        </listener>
-    </listeners>
     <filter>
         <whitelist>
             <directory suffix=".php">src/</directory>

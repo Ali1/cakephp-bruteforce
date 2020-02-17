@@ -7,9 +7,9 @@ use Cake\Controller\Controller;
 /**
  * Use Controller instead of AppController to avoid conflicts
  *
- * @property \BruteForceProtection\Controller\Component\BruteForceProtectionComponent $BruteForceProtection
+ * @property \Bruteforce\Controller\Component\BruteforceComponent $Bruteforce
  */
-class BruteForceProtectionComponentTestController extends Controller {
+class BruteforceComponentTestController extends Controller {
 
 	/**
 	 * @throws \Exception
@@ -17,7 +17,7 @@ class BruteForceProtectionComponentTestController extends Controller {
 	 * @return void
 	 */
 	public function initialize(): void {
-		$this->loadComponent('BruteForceProtection.BruteForceProtection');
+		$this->loadComponent('Bruteforce.Bruteforce');
 	}
 
 	/**
@@ -25,7 +25,7 @@ class BruteForceProtectionComponentTestController extends Controller {
 	 */
 	public function login(): void {
 		$this->autoRender = false;
-		$this->BruteForceProtection->applyProtection(
+		$this->Bruteforce->applyProtection(
 			'login',
 			['username', 'password'],
 			$this->getRequest()->getData(),
@@ -38,7 +38,7 @@ class BruteForceProtectionComponentTestController extends Controller {
 	 */
 	public function loginEncrypted(): void {
 		$this->autoRender = false;
-		$this->BruteForceProtection->applyProtection(
+		$this->Bruteforce->applyProtection(
 			'loginEncrypted',
 			['username', 'password'],
 			$this->getRequest()->getData(),
@@ -53,7 +53,7 @@ class BruteForceProtectionComponentTestController extends Controller {
 	 */
 	public function loginByUrl($secret): void {
 		$this->autoRender = false;
-		$this->BruteForceProtection->applyProtection(
+		$this->Bruteforce->applyProtection(
 			'loginByUrl',
 			['secret'],
 			['secret' => $secret],
@@ -68,7 +68,7 @@ class BruteForceProtectionComponentTestController extends Controller {
 	 */
 	public function shortTimeWindow($secret): void {
 		$this->autoRender = false;
-		$this->BruteForceProtection->applyProtection(
+		$this->Bruteforce->applyProtection(
 			'loginByUrl',
 			['secret'],
 			['secret' => $secret],

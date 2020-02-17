@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace BruteForceProtection\Exception;
+namespace Bruteforce\Exception;
 
 use Cake\Http\Exception\ForbiddenException;
 use Psr\SimpleCache\InvalidArgumentException as InvalidArgumentInterface;

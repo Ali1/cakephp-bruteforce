@@ -1,16 +1,16 @@
 <?php
 
-namespace BruteForceProtection\Controller\Component;
+namespace Bruteforce\Controller\Component;
 
-use BruteForceProtection\Exception\TooManyAttemptsException;
+use Bruteforce\Exception\TooManyAttemptsException;
 use Cake\Cache\Cache;
 use Cake\Controller\Component;
-use Cake\Controller\ComponentRegistry;
 use Cake\Log\Log;
 use Cake\Utility\Hash;
 use InvalidArgumentException as InvalidArgumentExceptionInvalidArgumentException;
 
-class BruteForceProtectionComponent extends Component {
+class BruteforceComponent extends Component {
+
 	/**
 	 * @var array
 	 */
@@ -33,7 +33,7 @@ class BruteForceProtectionComponent extends Component {
 	 * @param array $data an array of data, can use $this->request->getData()
 	 * @param array $config options
 	 *
-	 * @throws \BruteForceProtection\Exception\TooManyAttemptsException
+	 * @throws \Bruteforce\Exception\TooManyAttemptsException
 	 * @throws \InvalidArgumentException
 	 *
 	 * @return void

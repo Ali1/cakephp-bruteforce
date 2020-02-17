@@ -1,12 +1,12 @@
-# CakePHP Brute Force Protection Plugin
+# CakePHP Brute Force Plugin
 
 [![Framework](https://img.shields.io/badge/Framework-CakePHP%204.x-orange.svg)](http://cakephp.org)
 [![license](https://img.shields.io/github/license/LeWestopher/cakephp-monga.svg?maxAge=2592000)](/blob/master/LICENSE)
-[![Github All Releases](https://img.shields.io/packagist/dt/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://packagist.org/packages/ali1/cakephp-brute-force-protection)
-[![Travis](https://img.shields.io/travis/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://travis-ci.org/ali1/cakephp-brute-force-protection)
-[![Coverage Status](https://coveralls.io/repos/github/ali1/cakephp-brute-force-protection/badge.svg)](https://coveralls.io/github/ali1/cakephp-brute-force-protection)
+[![Github All Releases](https://img.shields.io/packagist/dt/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://packagist.org/packages/ali1/cakephp-bruteforce)
+[![Travis](https://img.shields.io/travis/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://travis-ci.org/ali1/cakephp-bruteforce)
+[![Coverage Status](https://coveralls.io/repos/github/ali1/cakephp-brute-force-protection/badge.svg)](https://coveralls.io/github/ali1/cakephp-bruteforce)
 
-A CakePHP plugin for dropping in Brute Force Protection to your controllers and methods. 
+A CakePHP plugin for easy drop-in Brute Force Protection for your controller methods. 
 
 ### Features
 * IP address-based protection
@@ -29,7 +29,7 @@ A CakePHP plugin for dropping in Brute Force Protection to your controllers and 
 In your CakePHP root directory: run the following command:
 
 ```
-composer require ali1/cakephp-brute-force-protection
+composer require ali1/cakephp-bruteforce
 ```
 
 Then in your Application.php in your project root, add the following snippet:
@@ -145,7 +145,7 @@ Non-form data can also be Brute Forced
                     'unencryptedKeyNames' => ['hashedid'] // so that you can see what has been attempted in logs/cache
                 ]
             );
-        } catch (\BruteForceProtection\Exception\TooManyAttemptsException $e) {
+        } catch (\Bruteforce\Exception\TooManyAttemptsException $e) {
             $this->Flash->error('Too many requests attempted. Please try again in a few minutes');
             return $this->redirect('/');
         }

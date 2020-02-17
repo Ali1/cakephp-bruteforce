@@ -1,22 +1,22 @@
 <?php
 declare(strict_types = 1);
 
-namespace BruteForceProtection\Test\TestCase\Controller\Component;
+namespace TestCase\Controller\Component;
 
-use BruteForceProtection\Exception\TooManyAttemptsException;
+use Bruteforce\Exception\TooManyAttemptsException;
 use Cake\Cache\Cache;
 use Cake\Event\Event;
 use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
-use TestApp\Controller\BruteForceProtectionComponentTestController;
+use TestApp\Controller\BruteforceComponentTestController;
 
 /**
  * App\Controller\Component\BruteForceProtectionComponent Test Case
  */
-class BruteForceProtectionComponentTest extends TestCase {
+class BruteforceComponentTest extends TestCase {
 
 	/**
-	 * @var \TestApp\Controller\BruteForceProtectionComponentTestController
+	 * @var \TestApp\Controller\BruteforceComponentTestController
 	 */
 	protected $Controller;
 
@@ -29,7 +29,7 @@ class BruteForceProtectionComponentTest extends TestCase {
 		parent::setUp();
 		Cache::delete('BruteForceData');
 
-		$this->Controller = new BruteForceProtectionComponentTestController(new ServerRequest());
+		$this->Controller = new BruteforceComponentTestController(new ServerRequest());
 		$this->Controller->startupProcess();
 	}
 

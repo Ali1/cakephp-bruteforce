@@ -1,5 +1,5 @@
 {
-    "name": "ali1/cakephp-brute-force-protection",
+    "name": "ali1/cakephp-bruteforce",
     "description": "CakePHP Plugin for Brute Force Protection",
     "type": "cakephp-plugin",
     "keywords":[
@@ -8,7 +8,7 @@
         "security",
         "bruteforce"
     ],
-    "homepage": "https://github.com/ali1/cakephp-brute-force-protection",
+    "homepage": "https://github.com/ali1/cakephp-bruteforce",
     "license": "MIT",
     "authors": [
         {
@@ -27,12 +27,12 @@
     },
     "autoload": {
         "psr-4": {
-            "BruteForceProtection\\": "src"
+            "Bruteforce\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "BruteForceProtection\\": "src",
+            "Bruteforce\\": "src",
             "TestApp\\": "tests/TestApp/src/"
         }
     },
