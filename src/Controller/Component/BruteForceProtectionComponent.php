@@ -11,12 +11,6 @@ use Cake\Utility\Hash;
 use InvalidArgumentException as InvalidArgumentExceptionInvalidArgumentException;
 
 class BruteForceProtectionComponent extends Component {
-
-	/**
-	 * @var \Cake\Controller\Controller
-	 */
-	protected $Controller;
-
 	/**
 	 * @var array
 	 */
@@ -29,14 +23,6 @@ class BruteForceProtectionComponent extends Component {
 		//                                  can try a few more times if realises the username was wrong
 		'unencryptedKeyNames' => [], // keysName for which the data will be stored unencrypted in cache (i.e. usernames)
 	];
-
-	/**
-	 * @inheritDoc
-	 */
-	public function __construct(ComponentRegistry $registry, array $config = []) {
-		parent::__construct($registry, $config);
-		$this->Controller = $this->_registry->getController();
-	}
 
 	/**
 	 * /**
