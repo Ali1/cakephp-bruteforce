@@ -4,16 +4,29 @@ namespace Bruteforce;
 
 class Challenge {
 
+	/**
+	 * @var array Key=>Data store of the challenge (data may be encrypted or unencrypted depending on config)
+	 */
 	public $data = [];
 
-	public $unencryptedData = []; // will be destroyed before serialize into Cache or Log
+	/**
+	 * @var array Key=>Data store of the challenge fully unencrypted. Will be destroyed before serialize into Cache or Log
+	 */
+	public $unencryptedData = [];
 
+	/**
+	 * @var array a list of keys in that are encrypted
+	 */
 	public $encryptedKeyNames = [];
 
 	/**
+	 * @param string $keyName
+	 * @param string $data
+	 * @param bool $hashed
+	 *
 	 * @return void
 	 */
-	public function addData(string $keyName, string $data, bool $hashed) {
+	public function addData(string $keyName, string $data, bool $hashed): void {
 		$this->unencryptedData[$keyName] = $data;
 		$this->data[$keyName] = $hashed ? password_hash($data, PASSWORD_DEFAULT) : $data;
 		if ($hashed) {
@@ -21,7 +34,13 @@ class Challenge {
 		}
 	}
 
-	public function matchesAnOldChallenge(Challenge $oldChallenge, $onlyFirstKey = false) {
+	/**
+	 * @param \Bruteforce\Challenge $oldChallenge
+	 * @param bool $onlyFirstKey
+	 *
+	 * @return bool
+	 */
+	public function matchesAnOldChallenge(Challenge $oldChallenge, $onlyFirstKey = false): bool {
 		if (array_keys($this->unencryptedData) !== array_keys($oldChallenge->data)) {
 			return false;
 		}
