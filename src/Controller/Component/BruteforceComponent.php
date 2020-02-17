@@ -73,7 +73,7 @@ class BruteforceComponent extends Component {
 
 		foreach ($ipData['attempts'] as $attempt) {
 			/** @var \Bruteforce\Challenge $oldChallenge */
-			$oldChallenge = unserialize($attempt['challenge'], [Challenge::class]);
+			$oldChallenge = unserialize($attempt['challenge'], ['allowed_classes' => [Challenge::class]]);
 			// no need to applyProtection and count this challenge if it is identical to a previous challenge attempt
 			if ($newChallenge->matchesAnOldChallenge($oldChallenge)) {
 				return; // if reached here, that means exactly same attempt previously - do not count
