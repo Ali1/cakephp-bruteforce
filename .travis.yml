@@ -44,7 +44,7 @@ script:
       vendor/bin/phpunit --verbose
     fi
 
-  - if [[ $CHECKS == 1 ]c]; then composer phpstan; fi
+  - if [[ $CHECKS == 1 ]]; then composer phpstan; fi
   - if [[ $CHECKS == 1 ]]; then composer cs-check; fi
 
 after_success:
