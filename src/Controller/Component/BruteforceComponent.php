@@ -41,7 +41,7 @@ class BruteforceComponent extends Component {
 	public function applyProtection(string $name, array $keyNames, array $data, array $config = []): void {
 		$config = array_merge($this->getConfig(), $config);
 
-		$challengeData = [];
+		$challengeData = $securedChallengeData = [];
 
 		foreach (array_keys($data) as $key) {
 			if (is_int($key)) {
@@ -51,108 +51,125 @@ class BruteforceComponent extends Component {
 		}
 
 		foreach ($keyNames as $keyName) {
-			$challengeData[$keyName] = empty($data[$keyName]) ? '' : $data[$keyName];
-			if (!$challengeData[$keyName]) {
-				return; // not being challenged or empty challenge - do not count
-			}
+		    if (!isset($data[$keyName]) || !is_string($data[$keyName]) || $data[$keyName] === '') {
+
+                return; // not being challenged or empty challenge - do not count
+            }
+			$challengeData[$keyName] = $securedChallengeData[$keyName] = $data[$keyName];
+            if ($this->isKeyEncrypted($keyName, $config)) {
+                $securedChallengeData[$keyName] = password_hash($data[$keyName], PASSWORD_DEFAULT);
+            }
+        }
+        $unencryptedFirstKey = $challengeData[$keyNames[0]];
+
+		$ipData = Cache::read($this->cacheKey($name), $config['cacheName']);
+		if (empty($ipData)) {
+			$ipData = ['attempts' => []]; // first login attempt - initialize data for cache
 		}
-
-		// prepare cache object for this IP address and this $config instance
-		$ip = $_SERVER['REMOTE_ADDR'];
-		$cacheKey = 'BruteForceData.' . str_replace(':', '.', $ip) . '.' . $name;
-
-		$ip_data = Cache::read($cacheKey, $config['cacheName']);
-
-		if (empty($ip_data)) {
-			// first login attempt - initialize data for cache
-			$ip_data = ['attempts' => []];
-		}
-
-		$securedChallengeData = $challengeData;
-		foreach ($challengeData as $key => $datum) {
-			if (!in_array($key, $config['unencryptedKeyNames'])) {
-				$securedChallengeData[$key] = password_hash($datum, PASSWORD_DEFAULT);
-			}
-		}
-
-		$unencryptedFirstKey = $challengeData[$keyNames[0]];
-
 		// remove old attempts based on configured time window
-		$ip_data['attempts'] = array_filter($ip_data['attempts'], function ($attempt) use ($config) {
+		$ipData['attempts'] = array_filter($ipData['attempts'], static function ($attempt) use ($config) {
 			return $attempt['time'] > (time() - $config['timeWindow']);
 		});
 
 		// analyse history of this user
-		$total_attempts = count($ip_data['attempts']);
-		$attemptedChallenges = Hash::extract($ip_data['attempts'], '{n}.challengeDataHash');
+		$total_attempts = count($ipData['attempts']);
+		$attemptedChallenges = Hash::extract($ipData['attempts'], '{n}.challengeDataHash');
 		$first_key_attempts = 0;
 		if ($config['firstKeyAttemptLimit']) {
-			foreach ($ip_data['attempts'] as $k => $attempt) {
-				if (in_array($keyNames[0], $config['unencryptedKeyNames'])) {
-					if ($unencryptedFirstKey !== $attempt['firstKey']) {
-						continue;
-					}
+			foreach ($ipData['attempts'] as $k => $attempt) {
+				if ($this->isKeyEncrypted($keyNames[0], $config)) {
+                    if (!password_verify($unencryptedFirstKey, $attempt['firstKey'])) {
+                        continue;
+                    }
 				} else {
-					if (!password_verify($unencryptedFirstKey, $attempt['firstKey'])) {
-						continue;
-					}
+                    if ($unencryptedFirstKey !== $attempt['firstKey']) {
+                        continue;
+                    }
 				}
 				$first_key_attempts++;
 			}
 		}
 
-		// don't count this as a challenge if it's a repeat of a previous combination
+        // don't count this as a challenge if it's a repeat of a previous combination
 		foreach ($attemptedChallenges as $existingChallengeDataHash) {
 			$existingChallengeData = unserialize($existingChallengeDataHash);
 			if (array_keys($securedChallengeData) !== array_keys($existingChallengeData)) {
-				continue;
+                continue;
 			}
 
-			foreach ($challengeData as $key => $datum) {
-				if (in_array($key, $config['unencryptedKeyNames'])) {
-					if ($datum !== $existingChallengeData[$key]) {
-						continue(2);
-					}
-				} else {
-					if (!password_verify($datum, $existingChallengeData[$key])) {
-						continue(2);
-					}
-				}
+			foreach ($challengeData as $keyName => $datum) {
+			    if (!$this->isSameStringOrMatchHash(
+			        $datum,
+                    $existingChallengeData[$keyName],
+                    $this->isKeyEncrypted($keyName, $config)
+                )) {
+                    continue(2);
+                }
 			}
 
-			return; // if got to here, that means exactly same attempt previously - do not count
+			return; // if reached here, that means exactly same attempt previously - do not count
 		}
 
-		if ($total_attempts > $config['totalAttemptsLimit'] || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])) {
-			Log::alert("Blocked login attempt\nIP: $ip\n\n", serialize($ip_data));
+		if (
+		    $total_attempts > $config['totalAttemptsLimit']
+            || ($config['firstKeyAttemptLimit'] && $first_key_attempts > $config['firstKeyAttemptLimit'])
+        ) {
+			Log::alert(
+			    "Bruteforce blocked\nIP: {$this->getController()->getRequest()->getEnv('REMOTE_ADDR')}\n",
+                serialize($ipData)
+            );
 			throw new TooManyAttemptsException();
 		}
 
 		// this new attempt
-		$newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
-		$newAttempt['firstKey'] = $securedChallengeData[$keyNames[0]];
-		$newAttempt['challengeDataHash'] = serialize($securedChallengeData);
-		$ip_data['attempts'][] = $newAttempt;
+		$ipData['attempts'][] = [
+		    'firstKey' => $securedChallengeData[$keyNames[0]],
+            'challengeDataHash' => serialize($securedChallengeData),
+            'time' => time(),
+        ];
 
-		Cache::write($cacheKey, $ip_data, $config['cacheName']);
+		Cache::write($this->cacheKey($name), $ipData, $config['cacheName']);
 	}
 
-	/**
-	 * @param string $ip
-	 * @param string $key unique string related to this type of challenge
-	 *
-	 * @return void
-	 */
-	public function recordFail($ip, $key) {
-		$key = 'BruteForceData.' . str_replace(':', '.', $ip) . '.' . $key;
-		$ip_data = Cache::read($key);
+    /**
+     * @return string
+     */
+	private function ipKey(): string {
+        $ip = $this->getRequest()->getEnv('REMOTE_ADDR') ?? null;
+        if (!$ip) {
+            return 'noIP';
+        }
+        return str_replace(':', '.', $ip);
+    }
 
-		if (empty($ip_data)) {
-			// first login attempt - initialize data for cache
-			$ip_data = ['attempts' => []];
-		}
-		// this new attempt
-		$newAttempt = ['firstKey' => null, 'challengeDataHash' => null, 'time' => time()];
-	}
+    /**
+     * @param $name
+     *
+     * @return string
+     */
+    public function cacheKey($name): string {
+        return 'BruteforceData.' . str_replace(':', '.', $this->ipKey()) . '.' . $name;
+    }
 
+    /**
+     * @param string $newString
+     * @param string $oldString
+     * @param bool $oldEncrypted
+     *
+     * @return bool
+     */
+    private function isSameStringOrMatchHash(string $newString, string $oldString, bool $oldEncrypted): bool {
+
+        return $oldEncrypted ? password_verify($newString, $oldString) : $newString === $oldString;
+    }
+
+    /**
+     * @param string $keyName
+     * @param array $config
+     *
+     * @return bool
+     */
+    private function isKeyEncrypted(string $keyName, array $config): bool {
+        return !in_array($keyName, $config['unencryptedKeyNames'], true);
+    }
 }
