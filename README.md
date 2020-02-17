@@ -1,10 +1,10 @@
 # CakePHP Brute Force Plugin
 
 [![Framework](https://img.shields.io/badge/Framework-CakePHP%204.x-orange.svg)](http://cakephp.org)
-[![license](https://img.shields.io/github/license/LeWestopher/cakephp-monga.svg?maxAge=2592000)](/blob/master/LICENSE)
-[![Github All Releases](https://img.shields.io/packagist/dt/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://packagist.org/packages/ali1/cakephp-bruteforce)
-[![Travis](https://img.shields.io/travis/ali1/cakephp-brute-force-protection.svg?maxAge=2592000)](https://travis-ci.org/ali1/cakephp-bruteforce)
+[![license](https://img.shields.io/github/license/ali1/cakephp-bruteforce.svg?maxAge=2592000)](/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/Ali1/cakephp-bruteforce.svg?branch=master)](https://travis-ci.org/Ali1/cakephp-bruteforce)
 [![Coverage Status](https://coveralls.io/repos/github/Ali1/cakephp-bruteforce/badge.svg?branch=master)](https://coveralls.io/github/Ali1/cakephp-bruteforce?branch=master)
+
 A CakePHP plugin for easy drop-in Brute Force Protection for your controller methods. 
 
 ### Features
