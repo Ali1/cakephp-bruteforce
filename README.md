@@ -98,8 +98,8 @@ The fourth argument for `applyProtection` is the $config array argument.
 |cacheName|default|The CakePHP Cache configuration to use. Make sure to use one with a duration longer than your time window otherwise you will not be protected.|
 |timeWindow|300|Time in seconds until Brute Force Protection resets|
 |totalAttemptsLimit|8|Number of attempts before user is blocked|
-|firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (e.g. username) - see below for example|
 |unencryptedKeyNames|[]|keysName for which the data will be stored unencrypted in cache (i.e. usernames)|
+|firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (good for username and password - set this to 5 and totalAttemptsLimit to 10 to allow 5 attempts, and then another 5 if user tries a different username)|
 
 
 ### Usage
@@ -118,15 +118,7 @@ The fourth argument for `applyProtection` is the $config array argument.
         $this->BruteForceProtection->applyProtection(
             'login', // unique name for this BruteForce action
             ['username', 'password'], // keys interrogated
-            $this->request->getData(), // user entered data
-            [
-                'totalAttemptsLimit' => 10,
-                'firstKeyAttemptLimit' => 7, // 7 attempts if same username, the block. But then allow another 3 if// 
-                                             // tries with different username to reach 10 attempts total
-                'unencryptedKeyNames' => ['username'] // when storing users history, which is needed to ignore
-                                                        //duplicate challenges, not all data needs to be encrypted.
-                                                        //Useful for logging/monitoring/debugging.
-            ], // options, see below
+            $this->request->getData() // user entered data
         );
         // login code
     }
@@ -149,7 +141,9 @@ Non-form data can also be Brute Forced
                 'publicHash',
                 ['hashedid'],
                 ['hashedid' => $hashedid],
-                ['totalAttemptsLimit' => 5, 'unencryptedKeyNames' => ['hashedid']],
+                [
+                    'unencryptedKeyNames' => ['hashedid'] // so that you can see what has been attempted in logs/cache
+                ]
             );
         } catch (\BruteForceProtection\Exception\TooManyAttemptsException $e) {
             $this->Flash->error('Too many requests attempted. Please try again in a few minutes');
