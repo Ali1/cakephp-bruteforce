@@ -108,7 +108,7 @@ class BruteforceComponent extends Component {
 	 * @return string
 	 */
 	private function ipKey(): string {
-		$ip = $this->getRequest()->getEnv('REMOTE_ADDR');
+		$ip = $this->getController()->getRequest()->getEnv('REMOTE_ADDR');
 		if (!$ip) {
 			return 'noIP';
 		}
