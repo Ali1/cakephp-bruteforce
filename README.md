@@ -36,13 +36,13 @@ Then in your Application.php in your project root, add the following snippet:
 
 ```php
 // In project_root/Application.php:
-        $this->addPlugin('BruteForceProtection.BruteForceProtection');
+        $this->addPlugin('Bruteforce.Bruteforce');
 ```
 
 or you can use the following shell command to enable to plugin in your bootstrap.php automatically:
 
 ```
-bin/cake plugin load BruteForceProtection
+bin/cake plugin load Bruteforce
 ```
 
 ### Basic Use
@@ -54,14 +54,14 @@ Load the component:
     public function initialize(): void
     {
         parent::initialize();
-        $this->loadComponent('BruteForceProtection.BruteForceProtection');
+        $this->loadComponent('Bruteforce.Bruteforce');
 
         // or with configuration
-        $this->loadComponent('BruteForceProtection.BruteForceProtection', ['cacheName' => 'BruteForceProtection']);
+        $this->loadComponent('Bruteforce.Bruteforce', ['cacheName' => 'Bruteforce']);
     }
 ````
 
-Apply protection (`$this->BruteForceProtection->applyProtection` must come before actually verifying or actioning the user submitted data)
+Apply protection (`$this->Bruteforce->applyProtection` must come before actually verifying or actioning the user submitted data)
 
 ````php
     public function login(): void
@@ -76,7 +76,7 @@ Apply protection (`$this->BruteForceProtection->applyProtection` must come befor
          * @param array $config options
          * @return void
          */
-        $this->BruteForceProtection->applyProtection(
+        $this->Bruteforce->applyProtection(
             'login',
             ['username', 'password'],
             $this->requst->getData(),
@@ -108,14 +108,14 @@ The fourth argument for `applyProtection` is the $config array argument.
 
 ```php
 // UsersController.php
-    public $components = ['BruteForceProtection.BruteForceProtection'];
+    public $components = ['Bruteforce.Bruteforce'];
     
     ...
     
     public function login()
     {
         // prior to actually verifying data
-        $this->BruteForceProtection->applyProtection(
+        $this->Bruteforce->applyProtection(
             'login', // unique name for this BruteForce action
             ['username', 'password'], // keys interrogated
             $this->request->getData() // user entered data
@@ -137,7 +137,7 @@ Non-form data can also be Brute Forced
     public function publicAuthUrl(string $hashedid): void
     {
         try {
-            $this->BruteForceProtection->applyProtection(
+            $this->Bruteforce->applyProtection(
                 'publicHash',
                 ['hashedid'],
                 ['hashedid' => $hashedid],
@@ -160,8 +160,8 @@ Although not ideal, when using plugins that you do not wish to extend, you can s
 ```php
 // AppController.php::initialize()
 
-        $this->loadComponent('BruteForceProtection.BruteForceProtection'); // Keep above any authentication components if running on initialize (default)
-        $this->BruteForceProtection->applyProtection(
+        $this->loadComponent('Bruteforce.Bruteforce'); // Keep above any authentication components if running on initialize (default)
+        $this->Bruteforce->applyProtection(
             'login', // unique name for this BruteForce action
             ['username', 'password'], // keys interrogated
             $this->request->getData(), // user entered data
