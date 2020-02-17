@@ -33,31 +33,31 @@ class BruteforceComponentTestController extends Controller {
 		);
 	}
 
-    /**
-     * @return void
-     */
-    public function loginEncrypted(): void {
-        $this->autoRender = false;
-        $this->Bruteforce->applyProtection(
-            'loginEncrypted',
-            ['username', 'password'],
-            $this->getRequest()->getData(),
-            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3]
-        );
-    }
+	/**
+	 * @return void
+	 */
+	public function loginEncrypted(): void {
+		$this->autoRender = false;
+		$this->Bruteforce->applyProtection(
+			'loginEncrypted',
+			['username', 'password'],
+			$this->getRequest()->getData(),
+			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3]
+		);
+	}
 
-    /**
-     * @return void
-     */
-    public function loginUnencrypted(): void {
-        $this->autoRender = false;
-        $this->Bruteforce->applyProtection(
-            'loginUnencrypted',
-            ['username', 'password'],
-            $this->getRequest()->getData(),
-            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username', 'password']]
-        );
-    }
+	/**
+	 * @return void
+	 */
+	public function loginUnencrypted(): void {
+		$this->autoRender = false;
+		$this->Bruteforce->applyProtection(
+			'loginUnencrypted',
+			['username', 'password'],
+			$this->getRequest()->getData(),
+			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username', 'password']]
+		);
+	}
 
 	/**
 	 * @param string $secret

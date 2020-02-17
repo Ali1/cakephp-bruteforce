@@ -52,25 +52,25 @@ class BruteforceComponentTest extends TestCase {
 		$this->loginTries('login');
 	}
 
-    /**
-     * @throws \Exception
-     *
-     * @return void
-     */
-    public function testLoginEncrypted(): void {
-        $this->loginTries('loginEncrypted');
-    }
+	/**
+	 * @throws \Exception
+	 *
+	 * @return void
+	 */
+	public function testLoginEncrypted(): void {
+		$this->loginTries('loginEncrypted');
+	}
 
-    /**
-     * @throws \Exception
-     *
-     * @return void
-     */
-    public function testLoginUnencrypted(): void {
-        $this->loginTries('loginUnencrypted');
-    }
+	/**
+	 * @throws \Exception
+	 *
+	 * @return void
+	 */
+	public function testLoginUnencrypted(): void {
+		$this->loginTries('loginUnencrypted');
+	}
 
-    /**
+	/**
 	 * @param string $actionName
 	 *
 	 * @throws \Exception
@@ -87,12 +87,12 @@ class BruteforceComponentTest extends TestCase {
 
 		$allowsAttempts = false;
 		try {
-            $this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
-            $this->Controller->invokeAction($action, []);
-            for ($i = 1; $i <= 3; $i++) {
-                $this->Controller->setRequest($this->Controller->getRequest()->withData('password', (string)mt_rand()));
-                $this->Controller->invokeAction($action, []);
-            }
+			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
+			$this->Controller->invokeAction($action, []);
+			for ($i = 1; $i <= 3; $i++) {
+				$this->Controller->setRequest($this->Controller->getRequest()->withData('password', (string)mt_rand()));
+				$this->Controller->invokeAction($action, []);
+			}
 			$allowsAttempts = true;
 		} catch (TooManyAttemptsException $e) {
 		}
@@ -100,7 +100,7 @@ class BruteforceComponentTest extends TestCase {
 
 		$disallowsAttemptsOverLimit = false;
 		try {
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'pass' . $i++));
+			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', (string)mt_rand()));
 			$this->Controller->invokeAction($action, []);
 		} catch (TooManyAttemptsException $e) {
 			$disallowsAttemptsOverLimit = true;
@@ -110,7 +110,7 @@ class BruteforceComponentTest extends TestCase {
 		$allowsExtraUsernameAttempt = false;
 		try {
 			$this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin2'));
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'pass' . $i++));
+			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', (string)mt_rand()));
 			$this->Controller->invokeAction($action, []);
 			$allowsExtraUsernameAttempt = true;
 		} catch (TooManyAttemptsException $e) {
@@ -128,15 +128,15 @@ class BruteforceComponentTest extends TestCase {
 		$this->assertTrue($disallowsAnyUsernameAttemptsOverLimit);
 
 		$allowsRepeatCombination = false;
-        try {
-            $this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
-            $this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
-            $this->Controller->invokeAction($action, []);
-            $allowsRepeatCombination = true;
-        } catch (TooManyAttemptsException $e) {
-        }
-        $this->assertTrue($allowsRepeatCombination);
-    }
+		try {
+			$this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
+			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
+			$this->Controller->invokeAction($action, []);
+			$allowsRepeatCombination = true;
+		} catch (TooManyAttemptsException $e) {
+		}
+		$this->assertTrue($allowsRepeatCombination);
+	}
 
 	/**
 	 * @return void
@@ -149,9 +149,9 @@ class BruteforceComponentTest extends TestCase {
 		new Event('Controller.startup', $this->Controller);
 		$allowsAttempts = false;
 		try {
-            for ($i = 1; $i <= 3; $i++) {
-                $this->Controller->invokeAction($action, [(string)mt_rand()]);
-            }
+			for ($i = 1; $i <= 3; $i++) {
+				$this->Controller->invokeAction($action, [(string)mt_rand()]);
+			}
 			$allowsAttempts = true;
 		} catch (TooManyAttemptsException $e) {
 		}
@@ -159,7 +159,6 @@ class BruteforceComponentTest extends TestCase {
 
 		$disallowsAttemptsOverLimit = false;
 		try {
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'pass' . $i++));
 			$this->Controller->invokeAction($action, [(string)mt_rand()]);
 		} catch (TooManyAttemptsException $e) {
 			$disallowsAttemptsOverLimit = true;
@@ -180,9 +179,9 @@ class BruteforceComponentTest extends TestCase {
 		new Event('Controller.startup', $this->Controller);
 		$allowsAttempts = false;
 		try {
-            for ($i = 1; $i <= 2; $i++) {
-                $this->Controller->invokeAction($action, [(string)mt_rand()]);
-            }
+			for ($i = 1; $i <= 2; $i++) {
+				$this->Controller->invokeAction($action, [(string)mt_rand()]);
+			}
 			$allowsAttempts = true;
 		} catch (TooManyAttemptsException $e) {
 		}
@@ -190,7 +189,6 @@ class BruteforceComponentTest extends TestCase {
 
 		$disallowsAttemptsOverLimit = false;
 		try {
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'pass' . $i++));
 			$this->Controller->invokeAction($action, [(string)mt_rand()]);
 		} catch (TooManyAttemptsException $e) {
 			$disallowsAttemptsOverLimit = true;
@@ -200,11 +198,11 @@ class BruteforceComponentTest extends TestCase {
 		sleep(5);
 		$allowsAttemptAfterTimeWindow = false;
 		try {
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'pass' . $i++));
 			$this->Controller->invokeAction($action, [(string)mt_rand()]);
 			$allowsAttemptAfterTimeWindow = true;
 		} catch (TooManyAttemptsException $e) {
 		}
 		$this->assertTrue($allowsAttemptAfterTimeWindow);
 	}
+
 }
