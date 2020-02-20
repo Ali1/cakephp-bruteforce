@@ -20,31 +20,31 @@ class BruteforceComponentTestController extends Controller {
 		$this->loadComponent('Bruteforce.Bruteforce');
 	}
 
-    /**
-     * @return void
-     */
-    public function login(): void {
-        $this->autoRender = false;
-        $this->Bruteforce->applyProtection(
-            'login',
-            $this->getRequest()->getData(),
-            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
-        );
-    }
+	/**
+	 * @return void
+	 */
+	public function login(): void {
+		$this->autoRender = false;
+		$this->Bruteforce->applyProtection(
+			'login',
+			$this->getRequest()->getData(),
+			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
+		);
+	}
 
-    /**
-     * @return void
-     */
-    public function loginAddExtraKeys(): void {
-        $this->autoRender = false;
-        $this->Bruteforce->applyProtection(
-            'loginAddExtraKeys',
-            array_merge($this->getRequest()->getData(), ['str_' . mt_rand() => mt_rand()]),
-            ['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
-        );
-    }
+	/**
+	 * @return void
+	 */
+	public function loginAddExtraKeys(): void {
+		$this->autoRender = false;
+		$this->Bruteforce->applyProtection(
+			'loginAddExtraKeys',
+			array_merge($this->getRequest()->getData(), ['str_' . mt_rand() => mt_rand()]),
+			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
+		);
+	}
 
-    /**
+	/**
 	 * @return void
 	 */
 	public function loginEncrypted(): void {

@@ -41,20 +41,21 @@ class Challenge {
 	 * @return bool
 	 */
 	public function matchesAnOldChallenge(Challenge $oldChallenge, $onlyFirstKey = false): bool {
-	    if (!$this->unencryptedData && !$oldChallenge->unencryptedData) {
-	        return true;
-        }
+		if (!$this->data && !$oldChallenge->data) {
+			return true;
+		}
 
+		if (!$this->data || !$oldChallenge->data) {
+			return false;
+		}
 
-		if ($onlyFirstKey) { // check if first keys match
-		    if (!$this->unencryptedData && array_key_first($this->unencryptedData) !== array_key_first($oldChallenge->unencryptedData)) {
-		        return false;
-            }
-        } else { // check all keys match
-            if(array_keys($this->unencryptedData) !== array_keys($oldChallenge->data)) {
-                return false;
-            }
-        }
+		if (array_key_first($this->data) !== array_key_first($oldChallenge->data)) {
+			return false; // first keys don't match
+		}
+
+		if (!$onlyFirstKey && array_keys($this->data) !== array_keys($oldChallenge->data)) { // check all keys match
+			return false; // some key doesn't match
+		}
 
 		foreach ($this->unencryptedData as $keyName => $datum) {
 			if ($oldChallenge->isKeyEncrypted($keyName)) {

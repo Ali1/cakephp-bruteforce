@@ -43,25 +43,25 @@ class BruteforceComponentTest extends TestCase {
 		unset($this->Controller);
 	}
 
-    /**
-     * @throws \Exception
-     *
-     * @return void
-     */
-    public function testLogin(): void {
-        $this->loginTries('login');
-    }
+	/**
+	 * @throws \Exception
+	 *
+	 * @return void
+	 */
+	public function testLogin(): void {
+		$this->loginTries('login');
+	}
 
-    /**
-     * @throws \Exception
-     *
-     * @return void
-     */
-    public function testLoginAddExtraKeys(): void {
-        $this->loginTries('loginAddExtraKeys', false);
-    }
+	/**
+	 * @throws \Exception
+	 *
+	 * @return void
+	 */
+	public function testLoginAddExtraKeys(): void {
+		$this->loginTries('loginAddExtraKeys', false);
+	}
 
-    /**
+	/**
 	 * @throws \Exception
 	 *
 	 * @return void
@@ -82,8 +82,9 @@ class BruteforceComponentTest extends TestCase {
 	/**
 	 * @param string $actionName
 	 *
-	 * @throws \Exception
+	 * @param bool $tryRepeat
 	 *
+	 * @throws \Exception
 	 * @return void
 	 */
 	public function loginTries($actionName, $tryRepeat = true): void {
@@ -138,23 +139,23 @@ class BruteforceComponentTest extends TestCase {
 		$this->assertTrue($disallowsAnyUsernameAttemptsOverLimit);
 
 		if ($tryRepeat) {
-            $allowsRepeatCombination = false;
-            try {
-                $this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
-                $this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
-                $this->Controller->invokeAction($action, []);
-                $allowsRepeatCombination = true;
-            }
-            catch (TooManyAttemptsException $e) {
-            }
-            $this->assertTrue($allowsRepeatCombination);
-        }
+			$allowsRepeatCombination = false;
+			try {
+				$this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
+				$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
+				$this->Controller->invokeAction($action, []);
+				$allowsRepeatCombination = true;
+			}
+			catch (TooManyAttemptsException $e) {
+			}
+			$this->assertTrue($allowsRepeatCombination);
+		}
 	}
 
-    /**
-     * @throws \Exception
-     * @return void
-     */
+	/**
+	 * @throws \Exception
+	 * @return void
+	 */
 	public function testSingleKey(): void {
 		$ip = $_SERVER['REMOTE_ADDR'] = random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255);
 		$this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'loginByUrl'));
@@ -217,19 +218,22 @@ class BruteforceComponentTest extends TestCase {
 		$this->assertTrue($allowsAttemptAfterTimeWindow);
 	}
 
-	public function testEmptyChallenge(): void
-    {
-        $this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'login'));
-        $action = $this->Controller->getAction();
-        for ($i = 1; $i <= 30; $i++) {
-            $allowsUnlimitedTriesWhenEmpty = false;
-            try {
-                $this->Controller->invokeAction($action, [(string)mt_rand()]);
-                $allowsUnlimitedTriesWhenEmpty = true;
-            }
-            catch (TooManyAttemptsException $e) {
-            }
-            $this->assertTrue($allowsUnlimitedTriesWhenEmpty);
-        }
-    }
+	/**
+	 * @return void
+	 */
+	public function testEmptyChallenge(): void {
+		$this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'login'));
+		$action = $this->Controller->getAction();
+		for ($i = 1; $i <= 30; $i++) {
+			$allowsUnlimitedTriesWhenEmpty = false;
+			try {
+				$this->Controller->invokeAction($action, [(string)mt_rand()]);
+				$allowsUnlimitedTriesWhenEmpty = true;
+			}
+			catch (TooManyAttemptsException $e) {
+			}
+			$this->assertTrue($allowsUnlimitedTriesWhenEmpty);
+		}
+	}
+
 }

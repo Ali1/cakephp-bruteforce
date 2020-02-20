@@ -51,34 +51,34 @@ class BruteforceComponent extends Component {
 		if ($config['firstKeyAttemptLimit'] && $config['firstKeyAttemptLimit'] >= $config['totalAttemptsLimit']) {
 		    throw new InvalidArgumentException(
 		        'firstKeyAttemptLimit must be null or an integer lower than totalAttemptsLimit'
-            );
-        }
+			);
+		}
 
 		$newChallenge = new Challenge();
 
 		$isEmptyChallenge = true;
 		foreach ($data as $keyName => $datum) {
-            if(!is_string($datum) && !is_int($datum)) {
-                throw new BadRequestException('Non-string data found for Bruteforce input "' . $keyName . '"');
-            }
+			if (!is_string($datum) && !is_int($datum)) {
+				throw new BadRequestException('Non-string data found for Bruteforce input "' . $keyName . '"');
+			}
 
-            if (empty($datum)) {
-                $datum = '';
-            } else {
-                $isEmptyChallenge = false;
-            }
+			if (empty($datum)) {
+				$datum = '';
+			} else {
+				$isEmptyChallenge = false;
+			}
 
-            $newChallenge->addData(
-                $keyName,
-                (string)$datum,
-                $datum && $this->isKeyEncrypted($keyName, $config)
-            );
+			$newChallenge->addData(
+				$keyName,
+				(string)$datum,
+				$datum && $this->isKeyEncrypted($keyName, $config)
+			);
 		}
 		unset($data);
 
 		if ($isEmptyChallenge) {
 		    return; // no need for protection to be applied for empty challenges (challenge not counted towards limit)
-        }
+		}
 
 		$ipData = Cache::read($this->cacheKey($name), $config['cacheName']);
 		if (empty($ipData)) {
