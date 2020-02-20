@@ -6,8 +6,9 @@ use Bruteforce\Challenge;
 use Bruteforce\Exception\TooManyAttemptsException;
 use Cake\Cache\Cache;
 use Cake\Controller\Component;
+use Cake\Http\Exception\BadRequestException;
 use Cake\Log\Log;
-use InvalidArgumentException as InvalidArgumentExceptionInvalidArgumentException;
+use InvalidArgumentException;
 
 class BruteforceComponent extends Component {
 
@@ -29,7 +30,6 @@ class BruteforceComponent extends Component {
 	 *
 	 * @param string $name a unique string to store the data under (different $name for different uses of Brute
 	 *                          force protection within the same application.
-	 * @param array $keyNames an array of key names in the data that you intend to interrogate
 	 * @param array $data an array of data, can use $this->request->getData()
 	 * @param array $config options
 	 *
@@ -38,25 +38,47 @@ class BruteforceComponent extends Component {
 	 *
 	 * @return void
 	 */
-	public function applyProtection(string $name, array $keyNames, array $data, array $config = []): void {
+	public function applyProtection(string $name, array $data, array $config = []): void {
 		$config = array_merge($this->getConfig(), $config);
 
 		foreach (array_keys($data) as $key) {
 			if (is_int($key)) {
-				throw new InvalidArgumentExceptionInvalidArgumentException('Keys for data cannot be integers');
+				throw new InvalidArgumentException('Keys for data cannot be integers');
 				// i.e. $data parameter cannot be array($password). Must be array('password' => $password)
 			}
 		}
 
+		if ($config['firstKeyAttemptLimit'] && $config['firstKeyAttemptLimit'] >= $config['totalAttemptsLimit']) {
+		    throw new InvalidArgumentException(
+		        'firstKeyAttemptLimit must be null or an integer lower than totalAttemptsLimit'
+            );
+        }
+
 		$newChallenge = new Challenge();
 
-		foreach ($keyNames as $keyName) {
-		    if (!isset($data[$keyName]) || !is_string($data[$keyName]) || $data[$keyName] === '') {
+		$isEmptyChallenge = true;
+		foreach ($data as $keyName => $datum) {
+            if(!is_string($datum) && !is_int($datum)) {
+                throw new BadRequestException('Non-string data found for Bruteforce input "' . $keyName . '"');
+            }
 
-				return; // not being challenged or empty challenge - do not count
-			}
-		    $newChallenge->addData($keyName, $data[$keyName], $this->isKeyEncrypted($keyName, $config));
+            if (empty($datum)) {
+                $datum = '';
+            } else {
+                $isEmptyChallenge = false;
+            }
+
+            $newChallenge->addData(
+                $keyName,
+                (string)$datum,
+                $datum && $this->isKeyEncrypted($keyName, $config)
+            );
 		}
+		unset($data);
+
+		if ($isEmptyChallenge) {
+		    return; // no need for protection to be applied for empty challenges (challenge not counted towards limit)
+        }
 
 		$ipData = Cache::read($this->cacheKey($name), $config['cacheName']);
 		if (empty($ipData)) {
@@ -121,7 +143,7 @@ class BruteforceComponent extends Component {
 	 * @return string
 	 */
 	public function cacheKey(string $name): string {
-		return 'BruteforceData.' . str_replace(':', '.', $this->ipKey()) . '.' . $name;
+		return 'BruteforceData.' . $this->ipKey() . '.' . $name;
 	}
 
 	/**

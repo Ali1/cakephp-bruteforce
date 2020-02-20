@@ -43,16 +43,25 @@ class BruteforceComponentTest extends TestCase {
 		unset($this->Controller);
 	}
 
-	/**
-	 * @throws \Exception
-	 *
-	 * @return void
-	 */
-	public function testLogin(): void {
-		$this->loginTries('login');
-	}
+    /**
+     * @throws \Exception
+     *
+     * @return void
+     */
+    public function testLogin(): void {
+        $this->loginTries('login');
+    }
 
-	/**
+    /**
+     * @throws \Exception
+     *
+     * @return void
+     */
+    public function testLoginAddExtraKeys(): void {
+        $this->loginTries('loginAddExtraKeys', false);
+    }
+
+    /**
 	 * @throws \Exception
 	 *
 	 * @return void
@@ -77,9 +86,8 @@ class BruteforceComponentTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function loginTries($actionName): void {
-		$ip = $_SERVER['REMOTE_ADDR'] = random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255);
-		$i = 0;
+	public function loginTries($actionName, $tryRepeat = true): void {
+		$_SERVER['REMOTE_ADDR'] = random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255);
 		new Event('Controller.startup', $this->Controller);
 		$this->Controller->setRequest($this->Controller->getRequest()->withParam('action', $actionName));
 		$action = $this->Controller->getAction();
@@ -105,6 +113,7 @@ class BruteforceComponentTest extends TestCase {
 		} catch (TooManyAttemptsException $e) {
 			$disallowsAttemptsOverLimit = true;
 		}
+
 		$this->assertTrue($disallowsAttemptsOverLimit);
 
 		$allowsExtraUsernameAttempt = false;
@@ -115,6 +124,7 @@ class BruteforceComponentTest extends TestCase {
 			$allowsExtraUsernameAttempt = true;
 		} catch (TooManyAttemptsException $e) {
 		}
+
 		$this->assertTrue($allowsExtraUsernameAttempt);
 
 		$disallowsAnyUsernameAttemptsOverLimit = false;
@@ -127,23 +137,26 @@ class BruteforceComponentTest extends TestCase {
 		}
 		$this->assertTrue($disallowsAnyUsernameAttemptsOverLimit);
 
-		$allowsRepeatCombination = false;
-		try {
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
-			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
-			$this->Controller->invokeAction($action, []);
-			$allowsRepeatCombination = true;
-		} catch (TooManyAttemptsException $e) {
-		}
-		$this->assertTrue($allowsRepeatCombination);
+		if ($tryRepeat) {
+            $allowsRepeatCombination = false;
+            try {
+                $this->Controller->setRequest($this->Controller->getRequest()->withData('username', 'admin'));
+                $this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
+                $this->Controller->invokeAction($action, []);
+                $allowsRepeatCombination = true;
+            }
+            catch (TooManyAttemptsException $e) {
+            }
+            $this->assertTrue($allowsRepeatCombination);
+        }
 	}
 
-	/**
-	 * @return void
-	 */
+    /**
+     * @throws \Exception
+     * @return void
+     */
 	public function testSingleKey(): void {
 		$ip = $_SERVER['REMOTE_ADDR'] = random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255);
-		$i = 0;
 		$this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'loginByUrl'));
 		$action = $this->Controller->getAction();
 		new Event('Controller.startup', $this->Controller);
@@ -173,7 +186,6 @@ class BruteforceComponentTest extends TestCase {
 	 */
 	public function testShortTimeWindow(): void {
 		$ip = $_SERVER['REMOTE_ADDR'] = random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255);
-		$i = 0;
 		$this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'shortTimeWindow'));
 		$action = $this->Controller->getAction();
 		new Event('Controller.startup', $this->Controller);
@@ -205,4 +217,19 @@ class BruteforceComponentTest extends TestCase {
 		$this->assertTrue($allowsAttemptAfterTimeWindow);
 	}
 
+	public function testEmptyChallenge(): void
+    {
+        $this->Controller->setRequest($this->Controller->getRequest()->withParam('action', 'login'));
+        $action = $this->Controller->getAction();
+        for ($i = 1; $i <= 30; $i++) {
+            $allowsUnlimitedTriesWhenEmpty = false;
+            try {
+                $this->Controller->invokeAction($action, [(string)mt_rand()]);
+                $allowsUnlimitedTriesWhenEmpty = true;
+            }
+            catch (TooManyAttemptsException $e) {
+            }
+            $this->assertTrue($allowsUnlimitedTriesWhenEmpty);
+        }
+    }
 }

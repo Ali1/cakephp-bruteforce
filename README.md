@@ -21,7 +21,6 @@ A CakePHP plugin for easy drop-in Brute Force Protection for your controller met
 * Composer
 * CakePHP 4.0+
 * PHP 7.2+
-* Cache
 
 ### Installation
 
@@ -70,15 +69,13 @@ Apply protection (`$this->Bruteforce->applyProtection` must come before actually
         /**
          * @param string $name a unique string to store the data under (different $name for different uses of Brute
      *                          force protection within the same application.
-         * @param array $keyNames an array of key names in the data that you intend to interrogate
          * @param array $data an array of data, can use $this->request->getData()
          * @param array $config options
          * @return void
          */
         $this->Bruteforce->applyProtection(
             'login',
-            ['username', 'password'],
-            $this->requst->getData(),
+            ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
             $config,            
         );
         
@@ -90,14 +87,14 @@ Apply protection (`$this->Bruteforce->applyProtection` must come before actually
 
 ### Configuration Options
 
-The fourth argument for `applyProtection` is the $config array argument.
+The third argument for `applyProtection` is the $config array argument.
 
 |Configuration Key|Default Value|Details|
 |---|---|---|
 |cacheName|default|The CakePHP Cache configuration to use. Make sure to use one with a duration longer than your time window otherwise you will not be protected.|
 |timeWindow|300|Time in seconds until Brute Force Protection resets|
 |totalAttemptsLimit|8|Number of attempts before user is blocked|
-|unencryptedKeyNames|[]|keysName for which the data will be stored unencrypted in cache (i.e. usernames)|
+|unencryptedKeyNames|[]| key names for which the data will be stored unencrypted in cache (i.e. usernames)|
 |firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (good for username and password - set this to 5 and totalAttemptsLimit to 10 to allow 5 attempts, and then another 5 if user tries a different username)|
 
 
@@ -116,8 +113,7 @@ The fourth argument for `applyProtection` is the $config array argument.
         // prior to actually verifying data
         $this->Bruteforce->applyProtection(
             'login', // unique name for this BruteForce action
-            ['username', 'password'], // keys interrogated
-            $this->request->getData() // user entered data
+            ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
         );
         // login code
     }
