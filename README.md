@@ -113,7 +113,7 @@ The third argument for `validate` is the \Ali1\BruteForceShield\Configuration ob
         $bruteConfig = new Configuration();
         $bruteConfig->setTotalAttemptsLimit(10);
         $bruteConfig->setStricterLimitOnKey('username', 7);
-        $bruteConfig->addUnencryptedKeyNames('username');
+        $bruteConfig->addUnencryptedKey('username');
 
         $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
