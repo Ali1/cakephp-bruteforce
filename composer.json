@@ -19,7 +19,9 @@
     "require": {
         "php": ">=7.2",
         "cakephp/cakephp": "^4.0",
-        "mockery/mockery": "0.9.*"
+        "mockery/mockery": "0.9.*",
+        "ali1/brute-force-shield": "dev-master",
+        "ext-json": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.0",
@@ -38,8 +40,8 @@
         }
     },
     "scripts": {
-        "cs-check": "vendor/bin/phpcs --standard=vendor/fig-r/psr2r-sniffer/PSR2R/ruleset.xml --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
-        "cs-fix": "vendor/bin/phpcbf --standard=vendor/fig-r/psr2r-sniffer/PSR2R/ruleset.xml --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
-        "phpstan": "vendor/bin/phpstan analyse -l 5 -c tests/phpstan.neon src/"
+        "cs-check": "phpcs --standard=vendor/fig-r/psr2r-sniffer/PSR2R/ruleset.xml --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
+        "cs-fix": "phpcbf --standard=vendor/fig-r/psr2r-sniffer/PSR2R/ruleset.xml --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
+        "phpstan": "phpstan analyse -l 5 -c tests/phpstan.neon src/"
     }
 }

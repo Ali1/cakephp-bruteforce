@@ -2,6 +2,7 @@
 
 namespace TestApp\Controller;
 
+use Ali1\BruteForceShield\Configuration;
 use Cake\Controller\Controller;
 
 /**
@@ -25,10 +26,14 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function login(): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(4);
+		$bruteConfig->setStricterLimitOnKey('username', 3);
+		$bruteConfig->addUnencryptedKey('username');
+		$this->Bruteforce->validate(
 			'login',
 			$this->getRequest()->getData(),
-			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
+			$bruteConfig
 		);
 	}
 
@@ -37,10 +42,14 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function loginAddExtraKeys(): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(4);
+		$bruteConfig->setStricterLimitOnKey('username', 3);
+		$bruteConfig->addUnencryptedKey('username');
+		$this->Bruteforce->validate(
 			'loginAddExtraKeys',
 			array_merge($this->getRequest()->getData(), ['str_' . mt_rand() => mt_rand()]),
-			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username']]
+			$bruteConfig
 		);
 	}
 
@@ -49,10 +58,13 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function loginEncrypted(): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(4);
+		$bruteConfig->setStricterLimitOnKey('username', 3);
+		$this->Bruteforce->validate(
 			'loginEncrypted',
 			$this->getRequest()->getData(),
-			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3]
+			$bruteConfig
 		);
 	}
 
@@ -61,10 +73,15 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function loginUnencrypted(): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(4);
+		$bruteConfig->setStricterLimitOnKey('username', 3);
+		$bruteConfig->addUnencryptedKey('username');
+		$bruteConfig->addUnencryptedKey('password');
+		$this->Bruteforce->validate(
 			'loginUnencrypted',
 			$this->getRequest()->getData(),
-			['totalAttemptsLimit' => 4, 'firstKeyAttemptLimit' => 3, 'unencryptedKeyNames' => ['username', 'password']]
+			$bruteConfig
 		);
 	}
 
@@ -75,10 +92,12 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function loginByUrl($secret): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(2);
+		$this->Bruteforce->validate(
 			'loginByUrl',
 			['secret' => $secret],
-			['totalAttemptsLimit' => 2]
+			$bruteConfig
 		);
 	}
 
@@ -89,10 +108,13 @@ class BruteforceComponentTestController extends Controller {
 	 */
 	public function shortTimeWindow($secret): void {
 		$this->autoRender = false;
-		$this->Bruteforce->applyProtection(
+		$bruteConfig = new Configuration();
+		$bruteConfig->setTotalAttemptsLimit(1);
+		$bruteConfig->setTimeWindow(4);
+		$this->Bruteforce->validate(
 			'loginByUrl',
 			['secret' => $secret],
-			['totalAttemptsLimit' => 1, 'timeWindow' => 4]
+			$bruteConfig
 		);
 	}
 

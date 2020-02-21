@@ -5,7 +5,9 @@
 [![Build Status](https://travis-ci.org/Ali1/cakephp-bruteforce.svg?branch=master)](https://travis-ci.org/Ali1/cakephp-bruteforce)
 [![Coverage Status](https://coveralls.io/repos/github/Ali1/cakephp-bruteforce/badge.svg?branch=master)](https://coveralls.io/github/Ali1/cakephp-bruteforce?branch=master)
 
-A CakePHP plugin for easy drop-in Brute Force Protection for your controller methods. 
+A CakePHP plugin for easy drop-in Brute Force Protection for your controller methods.
+
+Component Wrapper for [Ali1/BruteForceShield](https://github.com/Ali1/BruteForceShield)
 
 ### Features
 * IP address-based protection
@@ -53,30 +55,29 @@ Load the component:
     {
         parent::initialize();
         $this->loadComponent('Bruteforce.Bruteforce');
-
-        // or with configuration
-        $this->loadComponent('Bruteforce.Bruteforce', ['cacheName' => 'Bruteforce']);
     }
 ````
 
-Apply protection (`$this->Bruteforce->applyProtection` must come before actually verifying or actioning the user submitted data)
+Apply protection (`$this->Bruteforce->validate` must come before actually verifying or actioning the user submitted data)
 
 ````php
     public function login(): void
     {
-        $config = []; // see possible options below
+        $config = new \Ali1\BruteForceShield\Configuration(); // see possible options below
 
         /**
          * @param string $name a unique string to store the data under (different $name for different uses of Brute
      *                          force protection within the same application.
          * @param array $data an array of data, can use $this->request->getData()
-         * @param array $config options
+         * @param \Ali1\BruteForceShield\Configuration|null $config options
+         * @param string $cache Cache to use (default: 'default'). Make sure to use one with a duration longer than your time window otherwise you will not be protected.
          * @return void
          */
-        $this->Bruteforce->applyProtection(
+        $this->Bruteforce->validate(
             'login',
             ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
-            $config,            
+            $config,
+            'default'          
         );
         
         // the user will never get here if fails Brute Force Protection
@@ -87,16 +88,14 @@ Apply protection (`$this->Bruteforce->applyProtection` must come before actually
 
 ### Configuration Options
 
-The third argument for `applyProtection` is the $config array argument.
+The third argument for `validate` is the \Ali1\BruteForceShield\Configuration object.
 
-|Configuration Key|Default Value|Details|
+|Configuration method|Default Value|Details|
 |---|---|---|
-|cacheName|default|The CakePHP Cache configuration to use. Make sure to use one with a duration longer than your time window otherwise you will not be protected.|
-|timeWindow|300|Time in seconds until Brute Force Protection resets|
-|totalAttemptsLimit|8|Number of attempts before user is blocked|
-|unencryptedKeyNames|[]| key names for which the data will be stored unencrypted in cache (i.e. usernames)|
-|firstKeyAttemptLimit|null|Integer if you further want to limit the number of attempts with the same first key (good for username and password - set this to 5 and totalAttemptsLimit to 10 to allow 5 attempts, and then another 5 if user tries a different username)|
-
+|setTimeWindow|300|Time in seconds until Brute Force Protection resets|
+|setTotalAttemptsLimit|8|Number of attempts before user is blocked|
+|addUnencryptedKey|empty|use this method for each key that you wish for the data to be stored unencrypted in cache (i.e. usernames) and logs|
+|setStricterLimitOnKey(string $keyName, int $limitAttempts)|empty|Optional - if you further want to limit the number of attempts if using the same identifier (good for username and password - use setStricterLimitOnKey('username', 5) and setTotalAttemptsLimit(10) to allow 5 attempts, and then another 5 if user tries a different username)|
 
 ### Usage
 
@@ -111,9 +110,15 @@ The third argument for `applyProtection` is the $config array argument.
     public function login()
     {
         // prior to actually verifying data
-        $this->Bruteforce->applyProtection(
+        $bruteConfig = new Configuration();
+        $bruteConfig->setTotalAttemptsLimit(10);
+        $bruteConfig->setStricterLimitOnKey('username', 7);
+        $bruteConfig->addUnencryptedKeyNames('username');
+
+        $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
             ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
+            $bruteConfig
         );
         // login code
     }
@@ -132,13 +137,13 @@ Non-form data can also be Brute Forced
     public function publicAuthUrl(string $hashedid): void
     {
         try {
-            $this->Bruteforce->applyProtection(
+            $bruteConfig = new Configuration();
+            $bruteConfig->addUnencryptedKeyNames('hashedid');
+            $this->Bruteforce->validate(
                 'publicHash',
                 ['hashedid'],
                 ['hashedid' => $hashedid],
-                [
-                    'unencryptedKeyNames' => ['hashedid'] // so that you can see what has been attempted in logs/cache
-                ]
+                $bruteConfig
             );
         } catch (\Bruteforce\Exception\TooManyAttemptsException $e) {
             $this->Flash->error('Too many requests attempted. Please try again in a few minutes');
@@ -150,17 +155,16 @@ Non-form data can also be Brute Forced
 
 #### With user plugins (e.g. CakeDC/Users)
 
-Although not ideal, when using plugins that you do not wish to extend, you can safely place the `applyProtection` method in AppController.php `initialize` method, since this will run prior to user verification within the plugin.
+Although not ideal, when using plugins that you do not wish to extend, you can safely place the `validate` method in AppController.php `initialize` method, since this will run prior to user verification within the plugin.
 
 ```php
 // AppController.php::initialize()
 
         $this->loadComponent('Bruteforce.Bruteforce'); // Keep above any authentication components if running on initialize (default)
-        $this->Bruteforce->applyProtection(
+        $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
             ['username', 'password'], // keys interrogated
-            $this->request->getData(), // user entered data
-            ['totalAttemptsLimit' => 10, 'firstKeyAttemptLimit' => 7, 'unencryptedKeyNames' => ['username']], // options, see below
+            $this->request->getData() // user entered data
         );
         // this will not affect any other action except ones containing the username and password data points in $this->request->getData()
 ```
