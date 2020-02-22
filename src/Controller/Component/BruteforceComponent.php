@@ -12,7 +12,6 @@ use Cake\Log\Log;
 class BruteforceComponent extends Component {
 
 	/**
-	 *
 	 * @param string $name a unique string to store the data under (different $name for different uses of Brute
 	 *                          force protection within the same application.
 	 * @param array $data an array of data, can use $this->request->getData()
