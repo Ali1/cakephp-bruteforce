@@ -90,12 +90,7 @@ Apply protection (`$this->Bruteforce->validate` must come before actually verify
 
 The third argument for `validate` is the \Ali1\BruteForceShield\Configuration object.
 
-|Configuration method|Default Value|Details|
-|---|---|---|
-|setTimeWindow|300|Time in seconds until Brute Force Protection resets|
-|setTotalAttemptsLimit|8|Number of attempts before user is blocked|
-|addUnencryptedKey|empty|use this method for each key that you wish for the data to be stored unencrypted in cache (i.e. usernames) and logs|
-|setStricterLimitOnKey(string $keyName, int $limitAttempts)|empty|Optional - if you further want to limit the number of attempts if using the same identifier (good for username and password - use setStricterLimitOnKey('username', 5) and setTotalAttemptsLimit(10) to allow 5 attempts, and then another 5 if user tries a different username)|
+Instructions on configuring Brute Force Protection can be found [here](https://github.com/Ali1/BruteForceShield#configuration).
 
 ### Usage
 

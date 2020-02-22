@@ -98,7 +98,7 @@ class BruteforceComponentTest extends TestCase {
 		try {
 			$this->Controller->setRequest($this->Controller->getRequest()->withData('password', 'first'));
 			$this->Controller->invokeAction($action, []);
-			for ($i = 1; $i <= 3; $i++) {
+			for ($i = 1; $i <= 2; $i++) {
 				$this->Controller->setRequest($this->Controller->getRequest()->withData('password', (string)mt_rand()));
 				$this->Controller->invokeAction($action, []);
 			}
@@ -163,7 +163,7 @@ class BruteforceComponentTest extends TestCase {
 		new Event('Controller.startup', $this->Controller);
 		$allowsAttempts = false;
 		try {
-			for ($i = 1; $i <= 3; $i++) {
+			for ($i = 1; $i <= 2; $i++) {
 				$this->Controller->invokeAction($action, [(string)mt_rand()]);
 			}
 			$allowsAttempts = true;

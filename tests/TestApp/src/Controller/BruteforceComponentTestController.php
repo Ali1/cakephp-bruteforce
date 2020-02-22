@@ -109,7 +109,7 @@ class BruteforceComponentTestController extends Controller {
 	public function shortTimeWindow($secret): void {
 		$this->autoRender = false;
 		$bruteConfig = new Configuration();
-		$bruteConfig->setTotalAttemptsLimit(1);
+		$bruteConfig->setTotalAttemptsLimit(2);
 		$bruteConfig->setTimeWindow(4);
 		$this->Bruteforce->validate(
 			'loginByUrl',
