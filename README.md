@@ -136,7 +136,6 @@ Non-form data can also be Brute Forced
             $bruteConfig->addUnencryptedKey('hashedid');
             $this->Bruteforce->validate(
                 'publicHash',
-                ['hashedid'],
                 ['hashedid' => $hashedid],
                 $bruteConfig
             );
