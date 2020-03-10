@@ -157,8 +157,7 @@ Although not ideal, when using plugins that you do not wish to extend, you can s
         $this->loadComponent('Bruteforce.Bruteforce'); // Keep above any authentication components if running on initialize (default)
         $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
-            ['username', 'password'], // keys interrogated
-            $this->request->getData() // user entered data
+            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')] // user entered data
         );
-        // this will not affect any other action except ones containing the username and password data points in $this->request->getData()
+        // this will not affect any other action except ones containing POSTed usernames and passwords (empty challenges never get counted or blocked)
 ```
