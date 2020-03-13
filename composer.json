@@ -19,7 +19,7 @@
     "require": {
         "php": ">=7.2",
         "cakephp/cakephp": "^4.0",
-        "ali1/brute-force-shield": "^1.0",
+        "ali1/brute-force-shield": "^1.0.2",
         "ext-json": "*"
     },
     "require-dev": {
