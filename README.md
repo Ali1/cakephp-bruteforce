@@ -149,7 +149,7 @@ Non-form data can also be Brute Forced
 
 #### With user plugins (e.g. CakeDC/Users)
 
-Although not ideal, when using plugins that you do not wish to extend, you can safely place the `validate` method in AppController.php `initialize` method, since this will run prior to user verification within the plugin.
+Although not ideal, when using plugins that you do not wish to extend or modify, you can safely place the `validate` method in AppController.php `initialize` method, since this will run prior to user verification within the plugin.
 
 ```php
 // AppController.php::initialize()
