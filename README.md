@@ -36,7 +36,7 @@ Then in your Application.php in your project root, add the following snippet:
 
 ```php
 // In project_root/Application.php:
-        $this->addPlugin('Bruteforce.Bruteforce');
+        $this->addPlugin('Bruteforce');
 ```
 
 or you can use the following shell command to enable to plugin in your bootstrap.php automatically:
@@ -75,7 +75,7 @@ Apply protection (`$this->Bruteforce->validate` must come before actually verify
          */
         $this->Bruteforce->validate(
             'login',
-            ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
+            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')],
             $config,
             'default'          
         );
@@ -112,7 +112,7 @@ Instructions on configuring Brute Force Protection can be found [here](https://g
 
         $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
-            ['username' => $this->requst->getData('username'), 'password' => $this->requst->getData('password')],
+            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')],
             $bruteConfig
         );
         // login code
