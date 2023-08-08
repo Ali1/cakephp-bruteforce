@@ -105,17 +105,17 @@ Instructions on configuring Brute Force Protection can be found [here](https://g
     public function login()
     {
         // prior to actually verifying data
-        $bruteConfig = new Configuration();
-        $bruteConfig->setTotalAttemptsLimit(10);
-        $bruteConfig->setStricterLimitOnKey('username', 7);
-        $bruteConfig->addUnencryptedKey('username');
+        $bruteConfig = new \Ali1\BruteForceShield\Configuration();
+        $bruteConfig->setTotalAttemptsLimit(5);
+        $bruteConfig->setStricterLimitOnKey('username', 3); // setting a limit of 5 above, then a different limit here would mean the user has 3 chances to get the password right, but then an additional 2 chances if they try a different username
+        $bruteConfig->addUnencryptedKey('username'); // adding this would mean you could see which usernames are being attacks in your cache files used to store attempts
 
         $this->Bruteforce->validate(
             'login', // unique name for this BruteForce action
             ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')],
             $bruteConfig
         );
-        // login code
+        // rest of the login code to authorize the attempt
     }
 ```
 
