@@ -1,62 +1,55 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bruteforce\Controller\Component;
 
-use Ali1\BruteForceShield\BruteForceShield;
 use Ali1\BruteForceShield\Configuration;
-use Bruteforce\Exception\TooManyAttemptsException;
-use Cake\Cache\Cache;
+use Bruteforce\Utility\BruteforceLimiter;
 use Cake\Controller\Component;
-use Cake\Log\Log;
 
-class BruteforceComponent extends Component {
+class BruteforceComponent extends Component
+{
 
-	/**
-	 * @param string $name a unique string to store the data under (different $name for different uses of Brute
-	 *                          force protection within the same application.
-	 * @param array $data an array of data, can use $this->request->getData()
-	 * @param \Ali1\BruteForceShield\Configuration|null $bruteConfig
-	 * @param string $cache (default: 'default')
-	 *
-	 * @return bool
-	 */
-	public function validate(string $name, array $data, ?Configuration $bruteConfig = null, $cache = 'default'): bool {
-		$cacheKey = $this->cacheKey($name);
-		$shield = new BruteForceShield();
-		$userDataRaw = Cache::read($cacheKey, $cache);
-		$userData = $userDataRaw ? json_decode($userDataRaw, true) : null;
-		$userData = $shield->validate($userData, $data, $bruteConfig);
-		Cache::write($cacheKey, json_encode($userData), $cache);
-		if (!$shield->isValidated()) {
-			Log::alert(
-				"Bruteforce blocked\nIP: {$this->getController()->getRequest()->getEnv('REMOTE_ADDR')}\n",
-				json_encode($userData)
-			);
+    /**
+     * @param string $name A unique name for each protected flow.
+     * @param array $data Challenge data, commonly `$this->request->getData()`.
+     * @param \Ali1\BruteForceShield\Configuration|null $bruteConfig Legacy configuration object.
+     * @param string $cache Cache configuration name.
+     * @param array $config Extra limiter options.
+     * @return bool
+     */
+    public function validate(
+        string $name,
+        array $data,
+        ?Configuration $bruteConfig = null,
+        string $cache = 'default',
+        array $config = []
+    ): bool {
+        $config += [
+            'timeWindow' => $bruteConfig ? $bruteConfig->getTimeWindow() : 300,
+            'totalLimit' => $bruteConfig ? $bruteConfig->getTotalAttemptsLimit() : 8,
+            'stricterKey' => $bruteConfig ? $bruteConfig->getStricterLimitKey() : null,
+            'stricterLimit' => $bruteConfig ? $bruteConfig->getStricterLimitAttempts() : null,
+            'plainKeys' => $bruteConfig ? $bruteConfig->getUnencryptedKeyNames() : [],
+            'cache' => $cache,
+        ];
 
-			throw new TooManyAttemptsException();
-		}
+        return (new BruteforceLimiter())->validate(
+            $name,
+            $data,
+            $this->clientIp(),
+            $config
+        );
+    }
 
-		return $shield->isValidated();
-	}
+    public function cacheKey(string $name): string
+    {
+        return 'BruteforceData.' . str_replace([':', '\\', '/', ' '], '.', $this->clientIp()) . '.' . $name;
+    }
 
-	/**
-	 * @return string
-	 */
-	private function ipKey(): string {
-		$ip = $this->getController()->getRequest()->getEnv('REMOTE_ADDR');
-		if (!$ip) {
-			return 'noIP';
-		}
-		return str_replace(':', '.', $ip);
-	}
-
-	/**
-	 * @param string $name
-	 *
-	 * @return string
-	 */
-	public function cacheKey(string $name): string {
-		return 'BruteforceData.' . $this->ipKey() . '.' . $name;
-	}
-
+    private function clientIp(): string
+    {
+        return (string)($this->getController()->getRequest()->clientIp() ?: 'noIP');
+    }
 }
