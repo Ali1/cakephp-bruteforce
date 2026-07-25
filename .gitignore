@@ -46,3 +46,5 @@ Thumbs.db
 nbproject/*
 # Visual Studio Code
 .vscode
+# PHPUnit 10+ result cache directory
+.phpunit.cache/
