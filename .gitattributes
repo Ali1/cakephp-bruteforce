@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# The coding standard requires LF. Without this, core.autocrlf=true gives Windows
+# checkouts CRLF working copies and phpcs errors on every file.
+*.php text eol=lf
