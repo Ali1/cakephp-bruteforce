@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Bruteforce\Controller\Component;
@@ -10,7 +9,6 @@ use Cake\Controller\Component;
 
 class BruteforceComponent extends Component
 {
-
     /**
      * @param string $name A unique name for each protected flow.
      * @param array $data Challenge data, commonly `$this->request->getData()`.
@@ -24,7 +22,7 @@ class BruteforceComponent extends Component
         array $data,
         ?Configuration $bruteConfig = null,
         string $cache = 'default',
-        array $config = []
+        array $config = [],
     ): bool {
         $config += [
             'timeWindow' => $bruteConfig ? $bruteConfig->getTimeWindow() : 300,
@@ -39,15 +37,26 @@ class BruteforceComponent extends Component
             $name,
             $data,
             $this->clientIp(),
-            $config
+            $config,
         );
     }
 
+    /**
+     * The cache key holding this client's attempt history for a guarded action.
+     *
+     * @param string $name The name of the guarded action.
+     * @return string
+     */
     public function cacheKey(string $name): string
     {
         return 'BruteforceData.' . str_replace([':', '\\', '/', ' '], '.', $this->clientIp()) . '.' . $name;
     }
 
+    /**
+     * The requesting client's IP, or 'noIP' when it cannot be determined.
+     *
+     * @return string
+     */
     private function clientIp(): string
     {
         return (string)($this->getController()->getRequest()->clientIp() ?: 'noIP');

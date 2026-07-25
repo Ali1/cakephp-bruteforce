@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Bruteforce\Utility;
@@ -10,6 +9,16 @@ use Cake\Log\Log;
 
 class BruteforceLimiter
 {
+    /**
+     * Record an attempt and throw once the configured limits are exceeded.
+     *
+     * @param string $name The name of the guarded action.
+     * @param array<string, mixed> $data The submitted data forming the challenge.
+     * @param string $clientIp The client IP the attempt came from.
+     * @param array<string, mixed> $config Limiter config, merged over the defaults.
+     * @return bool
+     * @throws \Bruteforce\Exception\TooManyAttemptsException When a limit is exceeded.
+     */
     public function validate(string $name, array $data, string $clientIp, array $config = []): bool
     {
         $config += [
@@ -30,7 +39,7 @@ class BruteforceLimiter
         $challenge = $this->normaliseChallenge(
             $data,
             $config['challengeKeys'] === null ? null : (array)$config['challengeKeys'],
-            (array)$config['caseInsensitiveKeys']
+            (array)$config['caseInsensitiveKeys'],
         );
         if ($challenge === []) {
             return true;
@@ -76,6 +85,15 @@ class BruteforceLimiter
         return true;
     }
 
+    /**
+     * Evaluate one scope (per-IP or global) against its stored attempt history.
+     *
+     * @param array<string, string> $challenge The hashed challenge for this attempt.
+     * @param array<string, mixed> $config Limiter config for this scope.
+     * @param string $cacheKey The cache key holding this scope's history.
+     * @param string $scope The scope name, for logging.
+     * @return array<string, mixed>
+     */
     private function checkScope(array $challenge, array $config, string $cacheKey, string $scope): array
     {
         $history = Cache::read($cacheKey, $config['cache']);
@@ -83,7 +101,7 @@ class BruteforceLimiter
         $oldestAllowed = time() - (int)$config['timeWindow'];
         $history['attempts'] = array_values(array_filter(
             (array)$history['attempts'],
-            static fn (array $attempt): bool => (int)($attempt['time'] ?? 0) > $oldestAllowed
+            static fn(array $attempt): bool => (int)($attempt['time'] ?? 0) > $oldestAllowed,
         ));
 
         $sameStrictKeyAttempts = 0;
@@ -102,7 +120,10 @@ class BruteforceLimiter
             if (
                 $config['stricterKey']
                 && isset($challenge[$config['stricterKey']], $oldChallenge[$config['stricterKey']])
-                && hash_equals((string)$challenge[$config['stricterKey']], (string)$oldChallenge[$config['stricterKey']])
+                && hash_equals(
+                    (string)$challenge[$config['stricterKey']],
+                    (string)$oldChallenge[$config['stricterKey']],
+                )
             ) {
                 $sameStrictKeyAttempts++;
             }
@@ -124,6 +145,14 @@ class BruteforceLimiter
         ];
     }
 
+    /**
+     * Reduce submitted data to a sorted map of hashed, non-empty scalar values.
+     *
+     * @param array<string, mixed> $data The submitted data.
+     * @param array<string>|null $challengeKeys Keys to include, or null for all.
+     * @param array<string> $caseInsensitiveKeys Keys to lowercase before hashing.
+     * @return array<string, string>
+     */
     private function normaliseChallenge(array $data, ?array $challengeKeys, array $caseInsensitiveKeys): array
     {
         $challenge = [];
@@ -156,6 +185,13 @@ class BruteforceLimiter
         return $challenge;
     }
 
+    /**
+     * Whether two challenges are the same attempt repeated.
+     *
+     * @param array<string, string> $challenge The current challenge.
+     * @param array<string, string> $oldChallenge A previously stored challenge.
+     * @return bool
+     */
     private function matches(array $challenge, array $oldChallenge): bool
     {
         if (array_keys($challenge) !== array_keys($oldChallenge)) {
@@ -171,6 +207,14 @@ class BruteforceLimiter
         return true;
     }
 
+    /**
+     * Build a log-safe view of the challenge, redacting everything not explicitly allowed.
+     *
+     * @param array<string, mixed> $data The raw submitted data.
+     * @param array<string, string> $challenge The hashed challenge.
+     * @param array<string> $plainKeys Keys that may be logged in the clear.
+     * @return array<string, string>
+     */
     private function loggableChallenge(array $data, array $challenge, array $plainKeys): array
     {
         if ($plainKeys === []) {
@@ -187,11 +231,24 @@ class BruteforceLimiter
         return $loggable;
     }
 
+    /**
+     * The per-IP cache key for a guarded action.
+     *
+     * @param string $name The name of the guarded action.
+     * @param string $clientIp The client IP.
+     * @return string
+     */
     private function cacheKey(string $name, string $clientIp): string
     {
         return 'BruteforceData.' . str_replace([':', '\\', '/', ' '], '.', $clientIp) . '.' . $name;
     }
 
+    /**
+     * The cross-IP cache key for a guarded action.
+     *
+     * @param string $name The name of the guarded action.
+     * @return string
+     */
     private function globalCacheKey(string $name): string
     {
         return 'BruteforceData.global.' . $name;
