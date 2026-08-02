@@ -99,6 +99,13 @@ class BruteforceLimiterTest extends TestCase
         );
     }
 
+    public function testBlockedExceptionCarriesHttp429WithoutNewerCakephpClass(): void
+    {
+        $exception = new TooManyAttemptsException();
+
+        $this->assertSame(429, $exception->getCode());
+    }
+
     public function testParallelWorkersCannotPassTheConfiguredLimit(): void
     {
         $name = 'concurrency-' . bin2hex(random_bytes(8));

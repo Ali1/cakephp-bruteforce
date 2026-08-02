@@ -1,5 +1,9 @@
 # Change Log
 
+## 6.1.1 - 2026-08-02
+
+- Return HTTP 429 on CakePHP 5.0–5.2, which do not provide CakePHP's later `TooManyRequestsException` class.
+
 ## 6.1.0 - 2026-08-02
 
 - Make the CakePHP plugin the canonical implementation and remove the runtime dependency on BruteForceShield.
