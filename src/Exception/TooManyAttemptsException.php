@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace Bruteforce\Exception;
 
-use Cake\Http\Exception\TooManyRequestsException;
+use Cake\Http\Exception\HttpException;
 use Throwable;
 
-class TooManyAttemptsException extends TooManyRequestsException
+class TooManyAttemptsException extends HttpException
 {
+    protected int $_defaultCode = 429;
+
     /**
      * @param string|null $message The message, or null for the default wording.
      * @param int|null $code The exception code.
