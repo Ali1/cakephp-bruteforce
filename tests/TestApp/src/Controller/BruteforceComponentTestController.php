@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace TestApp\Controller;
 
-use Ali1\BruteForceShield\Configuration;
+use Bruteforce\Configuration;
 use Cake\Controller\Controller;
 
 /**
@@ -69,6 +69,23 @@ class BruteforceComponentTestController extends Controller
             'loginEncrypted',
             $this->getRequest()->getData(),
             $bruteConfig,
+        );
+    }
+
+    /**
+     * @return void
+     */
+    public function loginArrayConfig(): void
+    {
+        $this->autoRender = false;
+        $this->Bruteforce->validate(
+            'loginArrayConfig',
+            $this->getRequest()->getData(),
+            [
+                'totalLimit' => 4,
+                'stricterKey' => 'username',
+                'stricterLimit' => 3,
+            ],
         );
     }
 

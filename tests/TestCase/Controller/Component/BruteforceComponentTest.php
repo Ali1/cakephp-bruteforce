@@ -73,6 +73,14 @@ class BruteforceComponentTest extends TestCase
     }
 
     /**
+     * @return void
+     */
+    public function testLoginArrayConfiguration(): void
+    {
+        $this->loginTries('loginArrayConfig');
+    }
+
+    /**
      * @throws \Exception
      * @return void
      */

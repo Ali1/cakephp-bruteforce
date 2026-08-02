@@ -1,6 +1,6 @@
 {
     "name": "ali1/cakephp-bruteforce",
-    "description": "CakePHP Plugin for Brute Force Protection",
+    "description": "CakePHP-native brute-force protection plugin",
     "type": "cakephp-plugin",
     "keywords":[
         "cakephp",
@@ -19,7 +19,6 @@
     "require": {
         "php": "^8.2",
         "cakephp/cakephp": "^5.0",
-        "ali1/brute-force-shield": "^1.0.2",
         "ext-json": "*"
     },
     "require-dev": {
@@ -29,12 +28,14 @@
     },
     "autoload": {
         "psr-4": {
-            "Bruteforce\\": "src"
+            "Bruteforce\\": "src",
+            "Ali1\\BruteForceShield\\": "src/Compatibility"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "Bruteforce\\": "src",
+            "Ali1\\BruteForceShield\\": "src/Compatibility",
             "TestApp\\": "tests/TestApp/src/"
         }
     },
