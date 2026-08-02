@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use Cake\Cache\Cache;
 use Cake\Core\Configure;
+use Cake\Utility\Security;
 
 if (!defined('DS')) {
     define('DS', DIRECTORY_SEPARATOR);
@@ -64,6 +65,7 @@ $cache = [
 Cache::setConfig($cache);
 
 Configure::write('debug', true);
+Security::setSalt('test-only-bruteforce-hmac-key');
 
 if (!function_exists('array_key_first')) {
     function array_key_first(array $arr)

@@ -1,5 +1,12 @@
 # Change Log
 
-### Version 0.1.0
+## 6.1.0 - 2026-08-02
 
-This is the initial release version of this plugin.  This plugin will provide "push notification" style integration with a CakePHP 3.x app for various push related services.
+- Make the CakePHP plugin the canonical implementation and remove the runtime dependency on BruteForceShield.
+- Store all challenge values as server-keyed HMACs and never log submitted values.
+- Serialize limiter updates with inter-process locks and fail closed on storage errors.
+- Enable a cross-IP limit by default to backstop spoofed or rotating client addresses.
+
+## 0.1.0
+
+- Initial CakePHP brute-force protection component.

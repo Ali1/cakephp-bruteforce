@@ -1,163 +1,135 @@
 # CakePHP Brute Force Plugin
 
-[![Framework](https://img.shields.io/badge/Framework-CakePHP%204.x-orange.svg)](http://cakephp.org)
+[![Framework](https://img.shields.io/badge/Framework-CakePHP%205.x-orange.svg)](https://cakephp.org)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://www.php.net/)
 [![license](https://img.shields.io/github/license/ali1/cakephp-bruteforce.svg?maxAge=2592000)](/blob/master/LICENSE)
-[![Build Status](https://travis-ci.org/Ali1/cakephp-bruteforce.svg?branch=master)](https://travis-ci.org/Ali1/cakephp-bruteforce)
-[![Coverage Status](https://coveralls.io/repos/github/Ali1/cakephp-bruteforce/badge.svg?branch=master)](https://coveralls.io/github/Ali1/cakephp-bruteforce?branch=master)
 
-A CakePHP plugin for easy drop-in Brute Force Protection for your controller methods.
+A CakePHP 5 plugin providing cache-backed brute-force protection for controller actions. The limiter is implemented in
+this package; it is not a wrapper around BruteForceShield.
 
-Component Wrapper for [Ali1/BruteForceShield](https://github.com/Ali1/BruteForceShield)
+## Features
 
-### Features
-* IP address-based protection
-* Uses the Cache class to store attempts so no database installation necessary
-* Logs blocked attempts (uses CakePHP Logs)
-* Does not count re-attempts with same challenge details (e.g. if a user tries the same username/password combination a few times)
-* Can block multiple attempts at the same username earlier than the normal limit (to give users a chance to enter the correct username if they have been trying with the wrong one)
-* Can be applied in AppController::initialize for simpler set up when authentication plugins are used
-* Throws catchable exception which can optionally be caught
+- Per-client-IP and cross-IP attempt budgets
+- Optional stricter limit for repeated attempts against one field, such as a username
+- Duplicate-challenge detection, so retrying exactly the same values does not consume another attempt
+- Server-keyed HMAC-SHA256 storage for every submitted value
+- Inter-process locking around each complete cache read/check/write transaction
+- Fail-closed cache writes and lock acquisition, with critical logging
+- Alert logging for blocked attempts without submitted values
 
-### Requirements
+## Requirements
 
-* Composer
-* CakePHP 4.0+
-* PHP 7.2+
+- PHP 8.2+
+- CakePHP 5.x
+- A CakePHP cache configuration shared by all PHP workers serving the application
+- A non-empty, secret `Security.salt`
 
-### Installation
+The lock files live in PHP's system temporary directory and coordinate workers on one host. Each cache configuration
+uses a fixed pool of 256 striped locks, so rotating client addresses cannot create unbounded files. A multi-host
+deployment must put that directory on shared storage or add a distributed lock before sharing one limiter cache across
+hosts.
 
-In your CakePHP root directory: run the following command:
+## Installation
 
-```
+```sh
 composer require ali1/cakephp-bruteforce
 ```
 
-Then in your Application.php in your project root, add the following snippet:
+Load the plugin in `src/Application.php`:
 
 ```php
-// In project_root/Application.php:
-        $this->addPlugin('Bruteforce');
+$this->addPlugin('Bruteforce');
 ```
 
-or you can use the following shell command to enable to plugin in your bootstrap.php automatically:
-
-```
-bin/cake plugin load Bruteforce
-```
-
-### Basic Use
-
-Load the component:
-````php
-// in AppController.php or any controller
-
-    public function initialize(): void
-    {
-        parent::initialize();
-        $this->loadComponent('Bruteforce.Bruteforce');
-    }
-````
-
-Apply protection (`$this->Bruteforce->validate` must come before actually verifying or actioning the user submitted data)
-
-````php
-    public function login(): void
-    {
-        $config = new \Ali1\BruteForceShield\Configuration(); // see possible options below
-
-        /**
-         * @param string $name a unique string to store the data under (different $name for different uses of Brute
-     *                          force protection within the same application.
-         * @param array $data an array of data, can use $this->request->getData()
-         * @param \Ali1\BruteForceShield\Configuration|null $config options
-         * @param string $cache Cache to use (default: 'default'). Make sure to use one with a duration longer than your time window otherwise you will not be protected.
-         * @return void
-         */
-        $this->Bruteforce->validate(
-            'login',
-            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')],
-            $config,
-            'default'          
-        );
-        
-        // the user will never get here if fails Brute Force Protection
-        // a TooManyAttemptsException will be thrown
-        // usual login code here
-    }
-````
-
-### Configuration Options
-
-The third argument for `validate` is the \Ali1\BruteForceShield\Configuration object.
-
-Instructions on configuring Brute Force Protection can be found [here](https://github.com/Ali1/BruteForceShield#configuration).
-
-### Usage
-
-#### For a method for username / password BruteForce
+Load the component in a controller:
 
 ```php
-// UsersController.php
-    public $components = ['Bruteforce.Bruteforce'];
-    
-    ...
-    
-    public function login()
-    {
-        // prior to actually verifying data
-        $bruteConfig = new \Ali1\BruteForceShield\Configuration();
-        $bruteConfig->setTotalAttemptsLimit(5);
-        $bruteConfig->setStricterLimitOnKey('username', 3); // setting a limit of 5 above, then a different limit here would mean the user has 3 chances to get the password right, but then an additional 2 chances if they try a different username
-        $bruteConfig->addUnencryptedKey('username'); // adding this would mean you could see which usernames are being attacked in your log files
-
-        $this->Bruteforce->validate(
-            'login', // unique name for this BruteForce action
-            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')],
-            $bruteConfig
-        );
-        // rest of the login code to authorize the attempt
-    }
+public function initialize(): void
+{
+    parent::initialize();
+    $this->loadComponent('Bruteforce.Bruteforce');
+}
 ```
 
-#### Prevent URL based brute force
+## Basic use
 
-Non-form data can also be Brute Forced
-
-````php
-    /**
-     * @param string|null $hashedid
-     *
-     * @return void
-     */
-    public function publicAuthUrl(string $hashedid): void
-    {
-        try {
-            $bruteConfig = new Configuration();
-            $bruteConfig->addUnencryptedKey('hashedid');
-            $this->Bruteforce->validate(
-                'publicHash',
-                ['hashedid' => $hashedid],
-                $bruteConfig
-            );
-        } catch (\Bruteforce\Exception\TooManyAttemptsException $e) {
-            $this->Flash->error('Too many requests attempted. Please try again in a few minutes');
-            return $this->redirect('/');
-        }
-        
-        // then check if URL is actually valid
-````
-
-#### With user plugins (e.g. CakeDC/Users)
-
-Although not ideal, when using plugins that you do not wish to extend or modify, you can safely place the `validate` method in AppController.php `initialize` method, since this will run prior to user verification within the plugin.
+Call `validate()` before checking or acting on submitted credentials:
 
 ```php
-// AppController.php::initialize()
+use Bruteforce\Configuration;
 
-        $this->loadComponent('Bruteforce.Bruteforce'); // Keep above any authentication components if running on initialize (default)
-        $this->Bruteforce->validate(
-            'login', // unique name for this BruteForce action
-            ['username' => $this->request->getData('username'), 'password' => $this->request->getData('password')] // user entered data
-        );
-        // this will not affect any other action except ones containing POSTed usernames and passwords (empty challenges never get counted or blocked)
+$configuration = (new Configuration())
+    ->setTotalAttemptsLimit(60)
+    ->setStricterLimitOnKey('username', 7);
+
+$this->Bruteforce->validate(
+    'login',
+    [
+        'username' => $this->request->getData('username'),
+        'password' => $this->request->getData('password'),
+    ],
+    $configuration,
+);
+```
+
+The component throws `Bruteforce\Exception\TooManyAttemptsException` when a limit is reached or protection cannot
+safely persist the attempt.
+
+Applications upgrading from version 6.0 may temporarily keep importing
+`Ali1\BruteForceShield\Configuration`; this package provides that name as a deprecated compatibility class. New code
+should use `Bruteforce\Configuration`.
+
+## Limiter options
+
+The fifth `validate()` argument accepts additional options. For applications migrating from a local limiter whose third
+argument was an options array, the component also accepts that array directly as its third argument.
+
+| Option | Default | Meaning |
+|---|---:|---|
+| `timeWindow` | `300` | Per-IP rolling window in seconds |
+| `totalLimit` | `8` | Distinct attempts allowed per IP |
+| `stricterKey` | `null` | Field receiving a lower per-value limit |
+| `stricterLimit` | `null` | Distinct attempts allowed for `stricterKey` |
+| `globalTotalLimit` | `100` | Distinct attempts allowed across all IPs |
+| `globalStricterLimit` | per-IP value | Cross-IP limit for `stricterKey` |
+| `globalTimeWindow` | per-IP value | Cross-IP rolling window in seconds |
+| `skipGlobal` | `false` | Explicitly disable the cross-IP check for this request |
+| `challengeKeys` | all fields | Submitted fields included in duplicate and limit checks |
+| `caseInsensitiveKeys` | none | Fields lowercased before comparison, commonly usernames |
+| `cache` | component argument | CakePHP cache configuration name |
+
+The cross-IP budget is enabled by default. It is the backstop when an attacker can rotate source addresses or when a
+proxy configuration mistakenly accepts spoofed `X-Forwarded-For` values. Set an application-specific value based on
+legitimate aggregate traffic; disable it only when another trusted edge enforces an equivalent global budget.
+
+## Proxy configuration
+
+The component accepts `ServerRequest::clientIp()` only when it is a valid single IP address and otherwise falls back to
+the direct `REMOTE_ADDR`. This validation does not make an untrusted forwarding header trustworthy. If CakePHP request
+proxy trust is enabled, configure an explicit allowlist of trusted reverse-proxy addresses; never enable unrestricted
+proxy trust. Keep the global budget enabled even with a correct allowlist.
+
+## Stored and logged data
+
+Every non-empty scalar challenge value is normalized in memory and stored only as
+`HMAC-SHA256(value, Security.salt)`. The random-looking cache value is deterministic so duplicate and stricter-key
+comparisons remain efficient, but an attacker who obtains only the shared cache cannot run an offline dictionary attack
+without the server secret.
+
+Blocked-attempt logs contain the client IP, action name, limiting scope, submitted field names, and attempt count. They
+never contain submitted values. The legacy `addUnencryptedKey()` method is retained only so existing applications keep
+running; it no longer causes plaintext cache storage or logging and should be removed from application code.
+
+## URL-token protection
+
+Secret URL tokens use the same protection and must not be marked for plaintext handling:
+
+```php
+$configuration = (new Configuration())->setTotalAttemptsLimit(5);
+
+$this->Bruteforce->validate(
+    'publicAuthUrl',
+    ['hashedid' => $hashedid],
+    $configuration,
+);
 ```
