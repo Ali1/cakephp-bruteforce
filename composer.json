@@ -40,9 +40,15 @@
         }
     },
     "scripts": {
+        "check": [
+            "@cs-check",
+            "@phpstan",
+            "@test"
+        ],
         "cs-check": "phpcs --standard=CakePHP --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
         "cs-fix": "phpcbf --standard=CakePHP --ignore=/tests/test_files/ --extensions=php -p src/ tests/",
-        "phpstan": "phpstan analyse -l 5 -c tests/phpstan.neon src/"
+        "phpstan": "phpstan analyse -l 5 -c tests/phpstan.neon src/",
+        "test": "phpunit"
     },
     "config": {
         "allow-plugins": {

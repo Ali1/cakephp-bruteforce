@@ -24,6 +24,17 @@ this package; it is not a wrapper around BruteForceShield.
 - A CakePHP cache configuration shared by all PHP workers serving the application
 - A non-empty, secret `Security.salt`
 
+## Development
+
+Install development dependencies and run the complete quality gate:
+
+```sh
+composer install
+composer check
+```
+
+The gate runs CakePHP coding standards, PHPStan, and the PHPUnit suite.
+
 The lock files live in PHP's system temporary directory and coordinate workers on one host. Each cache configuration
 uses a fixed pool of 256 striped locks, so rotating client addresses cannot create unbounded files. A multi-host
 deployment must put that directory on shared storage or add a distributed lock before sharing one limiter cache across
