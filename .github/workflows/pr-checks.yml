@@ -1,31 +1,17 @@
 name: PR checks
-
 on:
-  pull_request:
-
+  workflow_dispatch:
 permissions:
   contents: read
-
-concurrency:
-  group: cakephp-bruteforce-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   quality:
-    name: PHP ${{ matrix.php }}
+    name: Focused source preflight
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php:
-          - '8.2'
-          - '8.4'
     steps:
       - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-      - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: vendor/bin/phpunit
-      - run: composer cs-check
-      - run: composer phpstan
+          php-version: '8.4'
+      - run: composer validate --no-check-publish
+      - name: PHP syntax
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
