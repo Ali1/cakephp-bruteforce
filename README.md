@@ -26,7 +26,7 @@ this package; it is not a wrapper around BruteForceShield.
 
 ## Development
 
-Install development dependencies and run the complete quality gate:
+Install development dependencies and run focused affected checks before push. The full local suite is available when useful; hosted full tests/static analysis run nightly and full standards run weekly as checks-only:
 
 ```sh
 composer install

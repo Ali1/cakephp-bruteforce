@@ -2,29 +2,45 @@ name: Nightly static and unit checks
 run-name: core-checks:${{ github.sha }}
 'on':
   schedule:
-  - cron: 19 1 * * *
-  workflow_dispatch: null
+    - cron: '19 1 * * *'
+  workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: core-checks-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  checks:
+  select:
     runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.select.outputs.run_full }}
     steps:
-    - uses: actions/checkout@v5
-    - name: Require exact default source
-      env:
-        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      run: 'test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
-
-        test "$(git rev-parse HEAD)" = "$GITHUB_SHA"'
-    - uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.4'
-        extensions: mbstring, intl, pdo_sqlite, pdo_mysql
-        coverage: none
-    - run: composer install --no-interaction --no-progress --prefer-dist
-    - run: vendor/bin/phpunit && composer phpstan
+      - uses: actions/checkout@v7
+      - id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NIGHTLY_ANCHOR_JOBS: 'Core checks'
+          CHECK_TITLE_PREFIX: core-checks
+        run: node .github/scripts/nightly-candidate.cjs
+  checks:
+    name: Core checks
+    needs: select
+    if: needs.select.outputs.run == 'true'
+    runs-on: ubuntu-latest
     timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Require exact default source
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/$DEFAULT_BRANCH"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_sqlite, pdo_mysql
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: vendor/bin/phpunit && composer phpstan && composer audit

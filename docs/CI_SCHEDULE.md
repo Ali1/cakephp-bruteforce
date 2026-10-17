@@ -2,7 +2,7 @@
 
 ## Scheduled checks — 17 October 2026
 
-Existing mandatory PR/change/release gates are unchanged. New checks-only default-branch schedules do not deploy or issue full-release receipts. UTC lanes:
+Focused affected checks run locally before push/merge. GitHub workflows are checks-only and do not gate merges, deployments or package publication. UTC lanes:
 
 - `nightly-core.yml`: `19 1 * * *` (core); existing contained/synthetic commands only.
 - `weekly-style.yml`: `19 4 * * 0` (style); existing contained/synthetic commands only.
