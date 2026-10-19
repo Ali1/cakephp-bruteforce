@@ -43,4 +43,22 @@ jobs:
           extensions: mbstring, intl, pdo_sqlite, pdo_mysql
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Identify PHPStan cache runtime
+        id: phpstan_cache_runtime
+        shell: bash
+        run: php -r '$extensions = []; foreach (get_loaded_extensions() as $extension) { $extensions[$extension] = phpversion($extension); } ksort($extensions); echo "id=" . hash("sha256", serialize([PHP_VERSION, PHP_OS_FAMILY, PHP_INT_SIZE, $extensions])) . PHP_EOL;' >> "$GITHUB_OUTPUT"
+      - name: Restore PHPStan result cache
+        id: phpstan_cache_restore
+        uses: actions/cache/restore@v6
+        with:
+          path: .phpstan/resultCache.php
+          key: phpstan-result-v1-${{ github.repository }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ steps.phpstan_cache_runtime.outputs.id }}-${{ hashFiles('composer.json', 'composer.lock', 'phpstan*.neon*', 'tests/phpstan*.neon*', 'stubs/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: phpstan-result-v1-${{ github.repository }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ steps.phpstan_cache_runtime.outputs.id }}-${{ hashFiles('composer.json', 'composer.lock', 'phpstan*.neon*', 'tests/phpstan*.neon*', 'stubs/**') }}-
       - run: vendor/bin/phpunit && composer phpstan && composer audit
+        id: phpstan_cache_analysis
+      - name: Save PHPStan result cache
+        uses: actions/cache/save@v6
+        if: ${{ always() && !cancelled() && steps.phpstan_cache_restore.outcome == 'success' && steps.phpstan_cache_analysis.outcome != 'skipped' && hashFiles('.phpstan/resultCache.php') != '' }}
+        with:
+          path: .phpstan/resultCache.php
+          key: ${{ steps.phpstan_cache_restore.outputs.cache-primary-key }}

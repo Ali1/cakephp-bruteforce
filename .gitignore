@@ -48,3 +48,6 @@ nbproject/*
 .vscode
 # PHPUnit 10+ result cache directory
 .phpunit.cache/
+
+# Disposable project-local PHPStan analysis cache.
+/.phpstan/
