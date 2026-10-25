@@ -1,0 +1,12 @@
+{
+  "checks": [
+    {
+      "program": "composer",
+      "args": [
+        "audit",
+        "--locked"
+      ]
+    }
+  ],
+  "workflow": "nightly-core.yml"
+}
