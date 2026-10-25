@@ -43,6 +43,13 @@ jobs:
           extensions: mbstring, intl, pdo_sqlite, pdo_mysql
           coverage: none
       - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Retain exact resolved dependency graph for separate audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-lock-${{ github.sha }}
+          path: composer.lock
+          if-no-files-found: error
+          retention-days: 7
       - name: Identify PHPStan cache runtime
         id: phpstan_cache_runtime
         shell: bash
@@ -54,7 +61,7 @@ jobs:
           path: .phpstan/resultCache.php
           key: phpstan-result-v1-${{ github.repository }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ steps.phpstan_cache_runtime.outputs.id }}-${{ hashFiles('composer.json', 'composer.lock', 'phpstan*.neon*', 'tests/phpstan*.neon*', 'stubs/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: phpstan-result-v1-${{ github.repository }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ steps.phpstan_cache_runtime.outputs.id }}-${{ hashFiles('composer.json', 'composer.lock', 'phpstan*.neon*', 'tests/phpstan*.neon*', 'stubs/**') }}-
-      - run: vendor/bin/phpunit && composer phpstan && composer audit
+      - run: vendor/bin/phpunit && composer phpstan
         id: phpstan_cache_analysis
       - name: Save PHPStan result cache
         uses: actions/cache/save@v6
@@ -62,3 +69,56 @@ jobs:
         with:
           path: .phpstan/resultCache.php
           key: ${{ steps.phpstan_cache_restore.outputs.cache-primary-key }}
+
+  dependency-security:
+    name: Dependency security audits
+    needs: [select, checks]
+    if: ${{ always() && !cancelled() && needs.select.outputs.run == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+      - name: Confirm actual audit source
+        env:
+          EXPECTED_SOURCE: ${{ github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SOURCE"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+      - name: Read graph produced by this exact source's dependency install
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-security-lock-${{ github.sha }}
+      - name: Read security recipe from the exact dispatcher version
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .dependency-security-runner
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/dependency-security.cjs
+            .github/scripts/dependency-security.test.cjs
+            .github/dependency-security.json
+            .github/workflows
+          sparse-checkout-cone-mode: false
+      - name: Verify security result reporting
+        run: node --test .dependency-security-runner/.github/scripts/dependency-security.test.cjs
+      - name: Run dependency security audits independently of functional checks
+        env:
+          AUDIT_SOURCE_DIR: ${{ github.workspace }}
+        run: node .dependency-security-runner/.github/scripts/dependency-security.cjs
+      - name: Retain security evidence even when audits fail
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-${{ github.sha }}
+          path: output/dependency-security/
+          if-no-files-found: warn
+          retention-days: 30
