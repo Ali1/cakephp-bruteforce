@@ -96,10 +96,24 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dependency-security-lock-${{ github.sha }}
+      - name: Read security recipe from the exact dispatcher version
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .dependency-security-runner
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/dependency-security.cjs
+            .github/scripts/dependency-security.test.cjs
+            .github/dependency-security.json
+            .github/workflows
+          sparse-checkout-cone-mode: false
       - name: Verify security result reporting
-        run: node --test .github/scripts/dependency-security.test.cjs
+        run: node --test .dependency-security-runner/.github/scripts/dependency-security.test.cjs
       - name: Run dependency security audits independently of functional checks
-        run: node .github/scripts/dependency-security.cjs
+        env:
+          AUDIT_SOURCE_DIR: ${{ github.workspace }}
+        run: node .dependency-security-runner/.github/scripts/dependency-security.cjs
       - name: Retain security evidence even when audits fail
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

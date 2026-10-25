@@ -19,14 +19,16 @@ function runAudits(checks, execute = spawnSync, cwd = process.cwd()) {
 function receipt(results, sourceSha, env = process.env) {
   return {schema_version: 1, repository: env.GITHUB_REPOSITORY || null,
     source_sha: sourceSha, category: 'dependency-security',
+    workflow_sha: env.GITHUB_WORKFLOW_SHA || null,
     verification_state: results.some(r => r.state === 'blocked') ? 'blocked' : results.some(r => r.state === 'failed') ? 'failed' : 'passed',
     run_url: env.GITHUB_RUN_ID ? `https://github.com/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : null,
     checks: results.map(({stdout, stderr, error, ...check}) => check)};
 }
 
 if (require.main === module) {
-  const root = path.resolve(__dirname, '../..');
-  const config = JSON.parse(fs.readFileSync(path.join(root, '.github/dependency-security.json'), 'utf8'));
+  const recipeRoot = path.resolve(__dirname, '../..');
+  const root = process.env.AUDIT_SOURCE_DIR ? path.resolve(process.env.AUDIT_SOURCE_DIR) : recipeRoot;
+  const config = JSON.parse(fs.readFileSync(path.join(recipeRoot, '.github/dependency-security.json'), 'utf8'));
   const source = execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   if (!/^[0-9a-f]{40}$/.test(source)) throw Error('Missing exact checked source');
   const output = path.join(root, 'output/dependency-security');
