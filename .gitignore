@@ -51,3 +51,5 @@ nbproject/*
 
 # Disposable project-local PHPStan analysis cache.
 /.phpstan/
+/.local-evidence.json
+/.local-certification-runner/
