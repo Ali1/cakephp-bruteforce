@@ -1,0 +1,83 @@
+name: Dependency security evidence collection
+run-name: dependency-security:${{ github.event.workflow_run.id }}:${{ github.event.workflow_run.run_attempt }}
+'on':
+  workflow_run:
+    workflows: ['Nightly static and unit checks']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: dependency-security-${{ github.event.workflow_run.id }}-${{ github.event.workflow_run.run_attempt }}
+  cancel-in-progress: false
+jobs:
+  dependency-security:
+    name: Collect dependency security evidence
+    if: github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Read security policy from the exact dispatcher version
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Verify security handoff and raw result reporting
+        run: node --test .github/scripts/dependency-security.test.cjs .github/scripts/dependency-security-source.test.cjs .github/scripts/dependency-audit-collection.test.cjs
+      - name: Select only an actual exact-source functional attempt
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/dependency-security-source.cjs
+      - name: Check out the selected audit source without executing it
+        if: steps.source.outputs.run_audit == 'true'
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          path: audit-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm exact default-history audit source
+        if: steps.source.outputs.run_audit == 'true'
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          test "$(git -C audit-source rev-parse HEAD)" = "$SOURCE_SHA"
+          git -C audit-source merge-base --is-ancestor "$SOURCE_SHA" "origin/$DEFAULT_BRANCH"
+      - uses: shivammathur/setup-php@v2
+        if: steps.source.outputs.run_audit == 'true'
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+      - name: Read the exact graph resolved by the selected functional run attempt
+        if: steps.source.outputs.run_audit == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.source.outputs.graph_artifact_id }}
+          run-id: ${{ steps.source.outputs.source_run_id }}
+          github-token: ${{ github.token }}
+          path: audit-source
+          merge-multiple: true
+      - name: Retain functional-attempt provenance alongside raw security evidence
+        if: steps.source.outputs.run_audit == 'true'
+        run: |
+          mkdir -p audit-source/output/dependency-security
+          cp dependency-security-source.json audit-source/output/dependency-security/source.json
+      - name: Collect independent unsuppressed dependency security evidence
+        if: steps.source.outputs.run_audit == 'true'
+        env:
+          AUDIT_SOURCE_DIR: ${{ github.workspace }}/audit-source
+        run: node .github/scripts/dependency-security.cjs --collect-evidence
+      - name: Retain security evidence even when audits fail
+        if: ${{ always() && steps.source.outputs.run_audit == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-${{ steps.source.outputs.source_sha }}
+          path: audit-source/output/dependency-security/
+          if-no-files-found: warn
+          retention-days: 30

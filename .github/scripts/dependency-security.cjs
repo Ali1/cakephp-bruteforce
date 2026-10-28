@@ -8,7 +8,7 @@ function runAudits(checks, execute = spawnSync, cwd = process.cwd()) {
     const result = execute(check.program, check.args, {
       cwd: path.resolve(cwd, check.directory || '.'),
       encoding: 'utf8', maxBuffer: 16 * 1024 * 1024,
-      shell: process.platform === 'win32' && check.program === 'npm',
+      shell: process.platform === 'win32' && ['npm','composer'].includes(check.program),
     });
     return {...check, exit_code: result.status,
       state: result.error || result.status === null ? 'blocked' : result.status === 0 ? 'passed' : 'failed',
@@ -40,10 +40,18 @@ if (require.main === module) {
     if (result.error) console.error(result.error);
     fs.writeFileSync(path.join(output, `audit-${index + 1}.log`), result.stdout + result.stderr + (result.error || ''));
   });
+  results.forEach((result,index)=>fs.writeFileSync(path.join(output,`audit-${index + 1}.json`),JSON.stringify(result,null,2)+'\n'));
   const record = receipt(results, source);
+  let collection;
+  if (process.argv.includes('--collect-evidence')) {
+    collection=require('./dependency-audit-collection.cjs').collect(results);
+    fs.writeFileSync(path.join(output,'collection.json'),JSON.stringify({...collection,source_sha:source},null,2)+'\n');
+    console.log('Security evidence collection: '+JSON.stringify(collection));
+  }
   fs.writeFileSync(path.join(output, 'receipt.json'), JSON.stringify(record, null, 2) + '\n');
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     `Dependency security: **${record.verification_state}** at \`${source}\`. Functional evidence is reported by separate checks.\n`);
-  process.exitCode = record.verification_state === 'passed' ? 0 : 1;
+  // Complete collection is not a clean audit: raw FAILED receipts/exits stay unchanged.
+  process.exitCode = collection ? (collection.collection_state === 'completed' ? 0 : 1) : record.verification_state === 'passed' ? 0 : 1;
 }
 module.exports = {runAudits, receipt};

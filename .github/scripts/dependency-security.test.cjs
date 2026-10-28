@@ -21,19 +21,26 @@ test('installation and process failures remain failures or explicit blocked evid
   const unavailable=runAudits([{program:'composer',args:['audit']}],()=>({status:null,error:Error('unavailable')}));
   assert.equal(receipt(unavailable,'b'.repeat(40),{}).verification_state,'blocked');
 });
-test('the real workflow keeps advisory status outside every functional job', () => {
+test('functional workflow certification and raw dependency audits have separate conclusions', () => {
   const root=path.resolve(__dirname,'../..');
   const config=JSON.parse(fs.readFileSync(path.join(root,'.github/dependency-security.json'),'utf8'));
-  const workflow=fs.readFileSync(path.join(root,'.github/workflows',config.workflow),'utf8');
-  const blocks=workflow.split(/^  (?=[a-z][a-z0-9-]*:\s*$)/m).slice(1);
-  const security=blocks.find(block=>block.startsWith('dependency-security:'));
-  assert.ok(security);
-  assert.ok(security.includes('name: Dependency security audits'));
-  assert.ok(security.includes('if: ${{ always() }}'));
-  assert.ok(!security.includes('continue-on-error'));
-  for(const block of blocks.filter(block=>!block.startsWith('dependency-security:'))){
-    const dependencies=block.match(/^    needs:[^\n]*(?:\n    -[^\n]*)*/m)?.[0] || '';
-    assert.ok(!dependencies.includes('dependency-security'), 'Functional jobs must not depend on the security job');
-    assert.doesNotMatch(block,/npm audit|composer audit/,'Audit findings cannot terminate a functional step');
+  const functional=fs.readFileSync(path.join(root,'.github/workflows',config.functional_workflow),'utf8');
+  const security=fs.readFileSync(path.join(root,'.github/workflows',config.workflow),'utf8');
+  assert.notEqual(config.functional_workflow,config.workflow);
+  assert.doesNotMatch(functional,/^  dependency-security:/m);
+  assert.doesNotMatch(functional,/npm audit|composer audit|scripts\/dependency-security\.cjs/);
+  assert.match(security,/workflow_run:/);
+  assert.doesNotMatch(security,/schedule:|cron:|continue-on-error/);
+  assert.match(security,/github\.workflow_sha/);
+  assert.match(security,/dependency-security-source\.cjs/);
+  assert.match(security,/steps\.source\.outputs\.source_sha/);
+  assert.match(security,/always\(\)/);
+  assert.match(security,/node \.github\/scripts\/dependency-security\.cjs --collect-evidence/);
+  assert.match(security,/audit-source\/output\/dependency-security/);
+  if(config.resolved_graph_artifact){
+    assert.match(functional,/dependency-security-lock-\$\{\{ github\.sha \}\}/);
+    assert.match(security,/artifact-ids: \$\{\{ steps\.source\.outputs\.graph_artifact_id \}\}/);
+    assert.match(security,/run-id: \$\{\{ steps\.source\.outputs\.source_run_id \}\}/);
+    assert.doesNotMatch(security,/composer install/);
   }
 });

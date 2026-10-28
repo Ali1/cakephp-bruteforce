@@ -4,9 +4,17 @@
       "program": "composer",
       "args": [
         "audit",
-        "--locked"
+        "--locked",
+        "--format=json"
       ]
     }
   ],
-  "workflow": "nightly-core.yml"
+  "workflow": "dependency-security.yml",
+  "functional_workflow": "nightly-core.yml",
+  "source_title_prefix": "core-checks",
+  "functional_jobs": [
+    "Core checks"
+  ],
+  "resolved_graph_artifact": true,
+  "historical_source": false
 }
