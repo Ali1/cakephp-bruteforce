@@ -1,5 +1,10 @@
 # Change Log
 
+## 6.1.2 - 2026-11-06
+
+- Acquire each physical lock stripe once, in consistent order, so colliding IP and global limiter keys cannot deadlock a login or payment request.
+- Preserve both attempt budgets and duplicate-challenge handling when their keys share a lock.
+
 ## 6.1.1 - 2026-08-02
 
 - Return HTTP 429 on CakePHP 5.0–5.2, which do not provide CakePHP's later `TooManyRequestsException` class.

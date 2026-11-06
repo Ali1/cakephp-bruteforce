@@ -280,15 +280,20 @@ class BruteforceLimiter
      */
     private function withLocks(array $cacheKeys, string $cache, callable $callback): void
     {
-        sort($cacheKeys, SORT_STRING);
+        $cacheNamespace = substr(hash('sha256', $cache), 0, 8);
+        $lockPaths = [];
+        foreach ($cacheKeys as $cacheKey) {
+            $lockStripe = substr(hash('sha256', $cacheKey), 0, 2);
+            $lockPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR
+                . 'cakephp-bruteforce-' . $cacheNamespace . '-' . $lockStripe . '.lock';
+            $lockPaths[$lockPath] = $cacheKey;
+        }
+        // Distinct scopes can share a stripe. Lock it once, in physical lock order.
+        ksort($lockPaths, SORT_STRING);
         $handles = [];
 
         try {
-            foreach ($cacheKeys as $cacheKey) {
-                $cacheNamespace = substr(hash('sha256', $cache), 0, 8);
-                $lockStripe = substr(hash('sha256', $cacheKey), 0, 2);
-                $lockPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR
-                    . 'cakephp-bruteforce-' . $cacheNamespace . '-' . $lockStripe . '.lock';
+            foreach ($lockPaths as $lockPath => $cacheKey) {
                 $handle = fopen($lockPath, 'c+b');
                 if ($handle === false || !flock($handle, LOCK_EX)) {
                     if (is_resource($handle)) {

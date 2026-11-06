@@ -161,4 +161,41 @@ class BruteforceLimiterTest extends TestCase
         $this->assertNotEmpty($lockFiles);
         $this->assertLessThanOrEqual(256, count($lockFiles));
     }
+
+    public function testCollidingIpAndGlobalLocksCompleteAndEnforceBothBudgets(): void
+    {
+        $pipes = [];
+        $process = proc_open(
+            [PHP_BINARY, TESTS . 'lock-collision-worker.php'],
+            [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']],
+            $pipes,
+        );
+        $this->assertIsResource($process);
+        fclose($pipes[0]);
+
+        try {
+            $deadline = microtime(true) + 5;
+            do {
+                $status = proc_get_status($process);
+                if (!$status['running']) {
+                    break;
+                }
+                usleep(10000);
+            } while (microtime(true) < $deadline);
+
+            $this->assertFalse($status['running'], 'A colliding IP/global lock must not deadlock the request.');
+            $this->assertSame(0, $status['exitcode'], stream_get_contents($pipes[2]));
+            $this->assertSame(
+                ['ip' => 1, 'global' => 1, 'blocked' => true],
+                json_decode(stream_get_contents($pipes[1]), true),
+            );
+        } finally {
+            if (proc_get_status($process)['running']) {
+                proc_terminate($process);
+            }
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+        }
+    }
 }
