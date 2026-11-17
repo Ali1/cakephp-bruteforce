@@ -1,0 +1,63 @@
+{
+  "repository": "Ali1/cakephp-bruteforce",
+  "environment": {
+    "CI": "true"
+  },
+  "setup": {
+    "php": [
+      {
+        "program": "php",
+        "args": [
+          ".github/scripts/prepare-native-dependencies.php"
+        ]
+      },
+      {
+        "program": "composer",
+        "args": [
+          "install",
+          "--no-interaction",
+          "--no-progress",
+          "--prefer-dist"
+        ]
+      },
+      {
+        "program": "composer",
+        "args": [
+          "check-platform-reqs"
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "phpunit": {
+      "setup": [
+        "php"
+      ],
+      "commands": [
+        {
+          "program": "php",
+          "args": [
+            "vendor/phpunit/phpunit/phpunit",
+            "--log-junit",
+            "{junit}"
+          ]
+        }
+      ],
+      "junit": true
+    },
+    "phpstan": {
+      "setup": [
+        "php"
+      ],
+      "commands": [
+        {
+          "program": "composer",
+          "args": [
+            "phpstan"
+          ]
+        }
+      ],
+      "junit": false
+    }
+  }
+}

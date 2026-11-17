@@ -27,3 +27,8 @@ evidence. Declined/unavailable coverage remains queued, never green. Use
 `.github/local-certification-v2.json`; all other categories remain explicitly missing.
 Legacy v1 statuses do not skip nightly work. Linux/database/browser/native results
 require their actual scope; portable static analysis is separately declared.
+
+## Native local certification — 17 November 2026
+
+Run `bin/certify-local.ps1 -Check phpunit` for the complete existing native unit recipe from a fresh committed archive. `bin/certify-local-v2.ps1` publishes approved exact-source categories under the shared Personal Ops contract. These database-free fixtures require no Docker, MariaDB or separate environment. Existing hosted platform/version compatibility and publication checks remain distinct; no hosted coverage is skipped without an explicit workflow mapping.
+The local library recipe uses `.github/local-test-composer.lock` to pin the existing reviewed development graph; it does not change the package dependency constraints or publish a root package lock.
