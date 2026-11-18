@@ -2,33 +2,19 @@
 
 - **Strategy:** `publication`. Follow [shared CI strategies](https://github.com/Ali1/personal-ops/blob/main/runbooks/ci-strategies.md) and [delivery workflow](https://github.com/Ali1/personal-ops/blob/main/runbooks/delivery-workflow.md).
 - Before push/merge, run focused affected regressions, static analysis and changed-file standards as relevant. Auth/limiter changes require meaningful security regressions and consumer checks before publication.
-- `.github/workflows/nightly-core.yml` runs unit/integration and PHPStan nightly for new default source; repeated attempts for the same SHA are deduplicated. `.github/workflows/weekly-style.yml` runs full coding standards weekly. Neither workflow gates a merge or publication; the manual `pr-checks.yml` workflow is checks-only.
-- `.github/workflows/weekly-style.yml` runs complete coding standards every Sunday, including unchanged source. No browser suite is declared for this library; consumer applications own browser coverage.
 - Dependency compatibility recommendations belong to relevant dependency/development changes. Existing security advisory channels and supported PHP/CakePHP constraints remain.
 
 ## Dependency security evidence
 
-Dependency advisories are reported by the independent **Dependency security evidence collection** workflow (`dependency-security.yml`). It follows each actual nightly/manual functional attempt once, preserving its exact source and resolved graph where required; deduplicated functional attempts do not repeat audits. Raw security failures cannot turn the functional workflow tick red. Its exact-source `dependency-security-<sha>` artifact contains `receipt.json` and audit logs; a failed raw audit remains failed. Complete valid report collection can succeed without making findings fail the combined GitHub tick; unavailable tools/indexes and malformed/incomplete reports fail collection. This is not a clean-security certificate and cannot skip functional/backend/build/browser checks. Existing schedules, new-source selection, installation failures and release/security approvals remain in force. A functional pass is not a security pass.
+Dependency security evidence is collected independently by scheduled/manual `dependency-security.yml` for new default source, with the existing UTC cadence. It resolves a fresh Composer graph without executing package scripts/plugins, retains exact-source raw audit reports, and fails on incomplete collection. A successful collection is not a clean-security or application-test claim.
 
-## Post-deployment local verification
+## Local application testing
 
-Follow the current [offer-first certification contract](https://github.com/Ali1/personal-ops/blob/main/runbooks/local-release-certification.md).
-Use judgment during rapid iterations: merges and deployments do not each require
-an offer or certification run. Keep deployment receipts and the uncertified queue,
-then at a natural stopping point ask whether Ali is done and offer one consolidated
-local verification pass. After his okay, freeze the latest intended committed SHA
-and run only missing approved complete compatible categories. Silence or elapsed
-time is not approval; do not keep reasking while an offer is pending or declined.
-Retain ownership until outcome or accepted handoff. Superseded intermediate commits
-need no repeated certification unless still independently deployed or relevant.
-Quiet maintenance must not lose this follow-up; changed code needs new exact-SHA
-evidence. Declined/unavailable coverage remains queued, never green. Use
-`bin/certify-local-v2.ps1` for the supported categories in
-`.github/local-certification-v2.json`; all other categories remain explicitly missing.
-Legacy v1 statuses do not skip nightly work. Linux/database/browser/native results
-require their actual scope; portable static analysis is separately declared.
+Application tests, static analysis and style checks run in the developing agent's workspace, not GitHub Actions. Follow the [shared delivery workflow](https://github.com/Ali1/personal-ops/blob/main/runbooks/delivery-workflow.md) for affected checks and the [local certification policy](https://github.com/Ali1/personal-ops/blob/main/runbooks/local-release-certification.md) for an explicitly approved comprehensive pass. Keep exact-source and scope receipts honest; no automatic comprehensive follow-up is implied by deployment.
+
+The existing local runners and `.github/local-certification-v2.json` remain available. Build, release, security and operational controls are separate from application testing.
 
 ## Native local certification — 17 November 2026
 
-Run `bin/certify-local.ps1 -Check phpunit` for the complete existing native unit recipe from a fresh committed archive. `bin/certify-local-v2.ps1` publishes approved exact-source categories under the shared Personal Ops contract. These database-free fixtures require no Docker, MariaDB or separate environment. Existing hosted platform/version compatibility and publication checks remain distinct; no hosted coverage is skipped without an explicit workflow mapping.
+Run `bin/certify-local.ps1 -Check phpunit` for the complete existing native unit recipe from a fresh committed archive. `bin/certify-local-v2.ps1` publishes approved exact-source categories under the shared Personal Ops contract. These database-free fixtures require no Docker, MariaDB or separate environment. Package compatibility fixtures remain available locally; publication controls remain separate from application testing.
 The local library recipe uses `.github/local-test-composer.lock` to pin the existing reviewed development graph; it does not change the package dependency constraints or publish a root package lock.

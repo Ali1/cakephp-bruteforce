@@ -10,11 +10,5 @@
     }
   ],
   "workflow": "dependency-security.yml",
-  "functional_workflow": "nightly-core.yml",
-  "source_title_prefix": "core-checks",
-  "functional_jobs": [
-    "Core checks"
-  ],
-  "resolved_graph_artifact": true,
-  "historical_source": false
+  "graph_source": "independent-no-install-no-scripts-no-plugins"
 }

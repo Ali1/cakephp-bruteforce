@@ -1,3 +1,4 @@
+// Legacy workflow-run handoff helper; inactive after independent security scheduling.
 'use strict';
 const fs = require('node:fs');
 

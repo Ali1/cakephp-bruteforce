@@ -21,26 +21,19 @@ test('installation and process failures remain failures or explicit blocked evid
   const unavailable=runAudits([{program:'composer',args:['audit']}],()=>({status:null,error:Error('unavailable')}));
   assert.equal(receipt(unavailable,'b'.repeat(40),{}).verification_state,'blocked');
 });
-test('functional workflow certification and raw dependency audits have separate conclusions', () => {
+test('independent security collection has no application-test handoff', () => {
   const root=path.resolve(__dirname,'../..');
   const config=JSON.parse(fs.readFileSync(path.join(root,'.github/dependency-security.json'),'utf8'));
-  const functional=fs.readFileSync(path.join(root,'.github/workflows',config.functional_workflow),'utf8');
   const security=fs.readFileSync(path.join(root,'.github/workflows',config.workflow),'utf8');
-  assert.notEqual(config.functional_workflow,config.workflow);
-  assert.doesNotMatch(functional,/^  dependency-security:/m);
-  assert.doesNotMatch(functional,/npm audit|composer audit|scripts\/dependency-security\.cjs/);
-  assert.match(security,/workflow_run:/);
-  assert.doesNotMatch(security,/schedule:|cron:|continue-on-error/);
-  assert.match(security,/github\.workflow_sha/);
-  assert.match(security,/dependency-security-source\.cjs/);
-  assert.match(security,/steps\.source\.outputs\.source_sha/);
+  assert.match(security,/schedule:/);
+  assert.match(security,/workflow_dispatch:/);
+  assert.doesNotMatch(security,/workflow_run:|continue-on-error|composer install|npm test|phpunit|phpstan/);
+  assert.match(security,/github.ref_name == github.event.repository.default_branch/);
+  assert.match(security,/nightly-candidate\.cjs/);
+  assert.match(security,/NIGHTLY_ANCHOR_JOBS: Collect dependency security evidence/);
+  assert.match(security,/composer update --no-install --no-scripts --no-plugins/);
+  assert.match(security,/git merge-base --is-ancestor/);
+  assert.match(security,/cp composer.lock output\/dependency-security\/composer.lock/);
   assert.match(security,/always\(\)/);
   assert.match(security,/node \.github\/scripts\/dependency-security\.cjs --collect-evidence/);
-  assert.match(security,/audit-source\/output\/dependency-security/);
-  if(config.resolved_graph_artifact){
-    assert.match(functional,/dependency-security-lock-\$\{\{ github\.sha \}\}/);
-    assert.match(security,/artifact-ids: \$\{\{ steps\.source\.outputs\.graph_artifact_id \}\}/);
-    assert.match(security,/run-id: \$\{\{ steps\.source\.outputs\.source_run_id \}\}/);
-    assert.doesNotMatch(security,/composer install/);
-  }
 });
